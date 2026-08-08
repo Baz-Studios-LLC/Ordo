@@ -24,6 +24,10 @@ use bevy::prelude::*;
 /// hints each picked their own number. Four consumers, one ladder.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Layer {
+    /// Pinned to things in the WORLD — nameplates, placards, bubbles.
+    /// Under everything: interface chrome dragged across a world-anchored
+    /// card must cover it, because the card belongs to the world.
+    World,
     /// Anchored furniture — the HUD.
     Panel,
     /// Movable windows, which sort among themselves above the furniture.
@@ -39,6 +43,7 @@ pub enum Layer {
 impl Layer {
     pub const fn z(self) -> i32 {
         match self {
+            Layer::World => -10,
             Layer::Panel => 0,
             Layer::Window => 10,
             Layer::Modal => 100,
