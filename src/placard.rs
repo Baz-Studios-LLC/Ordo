@@ -56,21 +56,7 @@ pub fn placard(
     lift: f32,
     reach: Option<f32>,
 ) -> PlacardParts {
-    let root = commands
-        .spawn((
-            Placard { over, lift, reach },
-            Node {
-                position_type: PositionType::Absolute,
-                width: Val::Px(0.0),
-                height: Val::Px(0.0),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::FlexEnd,
-                ..default()
-            },
-            Visibility::Hidden,
-            Layer::World,
-        ))
-        .id();
+    let root = pin(commands, over, lift, reach);
     let card = commands
         .spawn((
             Node {
@@ -92,6 +78,44 @@ pub fn placard(
         ))
         .id();
     PlacardParts { root, card }
+}
+
+/// A bare pinned point with no card: for floating marks and one-glyph
+/// callouts that would drown in a panel. Content goes in as children,
+/// centred on the point and growing upward, exactly as a placard's card
+/// does — a placard IS a pin wearing one.
+pub fn pin(commands: &mut Commands, over: Entity, lift: f32, reach: Option<f32>) -> Entity {
+    commands
+        .spawn((
+            Placard { over, lift, reach },
+            Node {
+                position_type: PositionType::Absolute,
+                width: Val::Px(0.0),
+                height: Val::Px(0.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::FlexEnd,
+                ..default()
+            },
+            Visibility::Hidden,
+            Layer::World,
+        ))
+        .id()
+}
+
+/// Climbs while it lives. Put beside a [`Placard`] and the pin rises off
+/// its anchor — the shape of every floating mark a game ever wants: a
+/// "+" of belief gained, a damage number, a coin earned. World units per
+/// second.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct Rising(pub f32);
+
+pub(crate) fn raise_placards(
+    time: Res<Time>,
+    mut rising: Query<(&mut Placard, &Rising)>,
+) {
+    for (mut placard, rate) in &mut rising {
+        placard.lift += rate.0 * time.delta_secs();
+    }
 }
 
 /// Follows every placard's anchor: projected through the world camera,
