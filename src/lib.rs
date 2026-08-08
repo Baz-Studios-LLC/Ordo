@@ -1,0 +1,151 @@
+//! Ordo — a small UI kit for Bevy games.
+//!
+//! Not a framework and not a general-purpose library. This is the set of
+//! pieces that turned up, hand-written, in three separate games, lifted once so
+//! they stop being written a fourth time. It is built for the games in this
+//! repository's neighbourhood and it makes choices a public library could not:
+//! one Bevy version, one layout idiom, no deprecation cycle, and freedom to
+//! break between games because every game pins its own rev.
+//!
+//! Two ideas carry the whole thing.
+//!
+//! **The game owns the palette.** Ordo names roles — [`Role::PanelBg`],
+//! [`Role::CardBorder`] — and the game says what colour those are. A kit that
+//! shipped its own palette would force a game like Divus Factus, whose panels
+//! are tinted from the same ramps its villagers' clothes are dyed from, to keep
+//! two sets of colours in step by hand forever.
+//!
+//! **Nothing is painted at spawn.** A widget carries tags saying which role and
+//! which metric it follows; a pass fills them in afterwards. That is what lets
+//! the theme file be edited with the game running, which is the single largest
+//! difference between this and hand-rolling it again.
+//!
+//! ```no_run
+//! use bevy::prelude::*;
+//! use ordo::prelude::*;
+//!
+//! App::new()
+//!     .add_plugins(DefaultPlugins)
+//!     .add_plugins(OrdoPlugin::with_theme("theme.ordo.toml"))
+//!     .run();
+//! ```
+
+pub mod overlay;
+pub mod theme;
+pub mod widgets;
+pub mod window;
+
+use bevy::prelude::*;
+
+pub use overlay::{
+    Layer, Lifetime, Notice, Notices, Toast, ToastShelf, Tooltip, TooltipView, toast_shelf,
+};
+pub use theme::{
+    ColorSpec, Edge, Face, Fill, FontFace, FontRole, FontSpec, Ink, Metric, Opacity, Ramps, Role,
+    TextSize, Theme, ThemeAsset, ThemeHandle,
+};
+pub use widgets::{
+    Anchor, Anchored, LabelColumn, OrdoButton, Padded, Panel, RowHeight, backdrop, body, button,
+    card, dim, heading, label, panel, row,
+};
+
+pub mod prelude {
+    pub use crate::OrdoPlugin;
+    pub use crate::overlay::{Layer, Notice, Notices, Tooltip, toast_shelf};
+    pub use crate::theme::{
+        Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Ramps, Role, TextSize, Theme,
+    };
+    pub use crate::widgets::{
+        Anchor, backdrop, body, button, card, dim, heading, label, panel, row,
+    };
+    pub use crate::window::{CloseButton, DragHandle, Titled, window};
+}
+
+/// Whether there is a mouse and a window to ask about.
+///
+/// False in a headless test, where the input plugins are not installed - and a
+/// system that asks for a resource which does not exist is an error, not a
+/// no-op.
+fn the_pointer_exists(
+    buttons: Option<Res<ButtonInput<MouseButton>>>,
+    primary: Query<(), With<bevy::window::PrimaryWindow>>,
+) -> bool {
+    buttons.is_some() && !primary.is_empty()
+}
+
+/// Installs the theme, its file, and the passes that paint.
+#[derive(Default)]
+pub struct OrdoPlugin {
+    theme_path: Option<String>,
+}
+
+impl OrdoPlugin {
+    /// No theme file. [`Theme`] keeps its defaults, and the game is free to
+    /// write them itself — which is the right shape for a game whose colours
+    /// are computed rather than chosen.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Load and watch a theme file, relative to the asset root.
+    pub fn with_theme(path: impl Into<String>) -> Self {
+        Self {
+            theme_path: Some(path.into()),
+        }
+    }
+}
+
+/// Ordo's passes, so a game can order its own work against them.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct OrdoSet;
+
+impl Plugin for OrdoPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_asset::<ThemeAsset>()
+            .register_asset_loader(theme::ThemeLoader)
+            .init_resource::<Theme>()
+            .init_resource::<Ramps>()
+            .init_resource::<Notices>()
+            .init_resource::<overlay::HoverClock>()
+            .init_resource::<window::Dragging>()
+            .add_systems(
+                Update,
+                (
+                    // What is on screen, and how faded, before anything is
+                    // painted — otherwise a toast spends its first frame at
+                    // whatever opacity it was spawned with.
+                    overlay::apply_layers,
+                    overlay::show_notices,
+                    overlay::cap_shelf,
+                    overlay::track_hover,
+                    overlay::show_tooltips,
+                    overlay::place_tooltips,
+                    overlay::fade_tooltip_text,
+                    overlay::age,
+                    // Chrome BEFORE paint, so a title bar put on this frame is
+                    // painted this frame rather than spending one bare.
+                    window::dress_windows,
+                    // These three want a mouse and a real window, and a kit
+                    // that cannot be tested without one is a kit nobody tests.
+                    // Ordo's own suite runs headless; so, now, does anyone
+                    // else's.
+                    window::drag_windows.run_if(the_pointer_exists),
+                    window::close_windows,
+                    window::focus_windows.run_if(the_pointer_exists),
+                    // Then the theme, then the paint.
+                    theme::apply_theme_asset,
+                    theme::repaint,
+                    widgets::relayout,
+                    widgets::resize_rows,
+                    widgets::paint_buttons,
+                )
+                    .chain()
+                    .in_set(OrdoSet),
+            );
+
+        if let Some(path) = &self.theme_path {
+            let handle = app.world().resource::<AssetServer>().load(path.clone());
+            app.insert_resource(ThemeHandle(handle));
+        }
+    }
+}

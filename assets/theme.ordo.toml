@@ -1,0 +1,63 @@
+# Ordo theme.
+#
+# Every key is optional: state what you disagree with, inherit the rest. A key
+# Ordo does not know is a hard error rather than a shrug, because a typo in a
+# hot-reloaded file that silently does nothing is the worst way to spend twenty
+# minutes.
+#
+# Edit this while the game runs. That is the point of it.
+
+[color]
+# Stated outright.
+panel_bg      = { srgb = [0.045, 0.050, 0.062], alpha = 0.985 }
+title_bg      = { srgb = [0.075, 0.082, 0.102], alpha = 0.990 }
+card_bg       = { srgb = [0.058, 0.062, 0.078] }
+
+# The dimmer behind a modal. Deliberately translucent, unlike panel_bg — a
+# scrim that hid the world would defeat itself.
+scrim         = { srgb = [0.020, 0.030, 0.050], alpha = 0.720 }
+
+ink           = { srgb = [0.900, 0.920, 0.950] }
+ink_dim       = { srgb = [0.620, 0.670, 0.740] }
+
+button_idle   = { srgb = [0.110, 0.140, 0.180] }
+button_hover  = { srgb = [0.190, 0.250, 0.320] }
+button_pressed = { srgb = [0.300, 0.400, 0.500] }
+
+# Drawn off a ramp the game lends to Ordo by name. The shade is the knob worth
+# having live: it is the number you actually fiddle with, and here it costs a
+# save rather than a rebuild.
+accent        = { ramp = "cloth_gold", shade = 0.85 }
+card_border   = { ramp = "cloth_gold", shade = 0.60, alpha = 0.55 }
+panel_border  = { ramp = "cloth_gold", shade = 0.55, alpha = 0.35 }
+
+[font]
+# Three ways to name a typeface. Generics are used here so the example needs no
+# font files of its own; a game that ships its own says `path` instead.
+#
+# Divus Factus would write:
+#   display      = { path = "fonts/Cinzel.ttf" }
+#   display_bold = { path = "fonts/CinzelDecorative-Bold.ttf" }
+#   body         = { path = "fonts/EBGaramond.ttf" }
+#
+# A role left out is simply not set, and Bevy's embedded default stands — which
+# is what a game with no opinion about type wants.
+display      = { generic = "serif" }
+display_bold = { generic = "serif", weight = 700 }
+body         = { generic = "sans-serif" }
+
+[metric]
+title_size  = 15.0
+body_size   = 13.0
+small_size  = 12.0
+
+pad         = 12.0
+gap         = 5.0
+margin      = 10.0
+
+# One width everywhere is what makes stacked rows read as a table.
+label_width = 112.0
+row_height  = 22.0
+
+border      = 1.0
+radius      = 5.0

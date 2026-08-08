@@ -1,0 +1,33 @@
+[package]
+name = "ordo"
+version = "0.1.0"
+edition = "2024"
+description = "A small UI kit for Bevy games — roles, metrics, and the handful of widgets worth not writing twice."
+
+[dependencies]
+# Ordo tracks one Bevy version at a time. There is no compatibility matrix and
+# there will not be one: every game that consumes this is on the same release,
+# and pinning a rev per game is what lets a shipped title stay still while the
+# next one moves.
+bevy = { version = "0.19.0", default-features = false, features = [
+    "bevy_ui",
+    "bevy_ui_widgets",
+    "bevy_text",
+    "bevy_asset",
+    "bevy_log",
+    "bevy_picking",
+    "ui_picking",
+] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
+
+[dev-dependencies]
+# The example wants a real window, a renderer, and the file watcher that makes
+# the point of the whole theme asset.
+bevy = { version = "0.19.0", features = ["file_watcher"] }
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
