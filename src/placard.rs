@@ -35,6 +35,23 @@ pub struct Placard {
     /// a card that has shrunk past reading is clutter, not information.
     /// `None` never hides.
     pub reach: Option<f32>,
+    /// Inside this many world units the card is full-sized; past it, it
+    /// shrinks with distance down to [`SCALE_FLOOR`]. Depth on a flat
+    /// screen, and the answer to a crowd: near cards read, far cards
+    /// register as presence without shouting.
+    pub full_within: f32,
+}
+
+/// How small a placard may shrink before it stops being information.
+const SCALE_FLOOR: f32 = 0.5;
+
+/// The screen scale of something `distance` away that reads full-size
+/// within `full_within`. The one authority on depth scaling — anything
+/// world-anchored that is not yet a placard (Divus Factus's speech
+/// bubbles, mid-migration) borrows it from here rather than growing its
+/// own curve.
+pub fn depth_scale(distance: f32, full_within: f32) -> f32 {
+    (full_within / distance.max(1.0)).clamp(SCALE_FLOOR, 1.0)
 }
 
 /// The pieces a placard is made of.
@@ -55,8 +72,9 @@ pub fn placard(
     over: Entity,
     lift: f32,
     reach: Option<f32>,
+    full_within: f32,
 ) -> PlacardParts {
-    let root = pin(commands, over, lift, reach);
+    let root = pin(commands, over, lift, reach, full_within);
     let card = commands
         .spawn((
             Node {
@@ -84,10 +102,21 @@ pub fn placard(
 /// callouts that would drown in a panel. Content goes in as children,
 /// centred on the point and growing upward, exactly as a placard's card
 /// does — a placard IS a pin wearing one.
-pub fn pin(commands: &mut Commands, over: Entity, lift: f32, reach: Option<f32>) -> Entity {
+pub fn pin(
+    commands: &mut Commands,
+    over: Entity,
+    lift: f32,
+    reach: Option<f32>,
+    full_within: f32,
+) -> Entity {
     commands
         .spawn((
-            Placard { over, lift, reach },
+            Placard {
+                over,
+                lift,
+                reach,
+                full_within,
+            },
             Node {
                 position_type: PositionType::Absolute,
                 width: Val::Px(0.0),
@@ -96,6 +125,7 @@ pub fn pin(commands: &mut Commands, over: Entity, lift: f32, reach: Option<f32>)
                 align_items: AlignItems::FlexEnd,
                 ..default()
             },
+            UiTransform::default(),
             Visibility::Hidden,
             Layer::World,
         ))
@@ -128,7 +158,7 @@ pub(crate) fn raise_placards(
 pub(crate) fn place_placards(
     cameras: Query<(&Camera, &GlobalTransform)>,
     anchors: Query<&GlobalTransform>,
-    mut placards: Query<(&Placard, &mut Node, &mut Visibility)>,
+    mut placards: Query<(&Placard, &mut Node, &mut Visibility, &mut UiTransform)>,
 ) {
     let Some((camera, camera_at)) = cameras
         .iter()
@@ -136,19 +166,24 @@ pub(crate) fn place_placards(
     else {
         return;
     };
-    for (placard, mut node, mut visibility) in &mut placards {
+    for (placard, mut node, mut visibility, mut ui) in &mut placards {
         let Ok(anchor) = anchors.get(placard.over) else {
             *visibility = Visibility::Hidden;
             continue;
         };
         let seat = anchor.translation() + Vec3::Y * placard.lift;
-        let near = placard
-            .reach
-            .is_none_or(|reach| seat.distance(camera_at.translation()) < reach);
+        let distance = seat.distance(camera_at.translation());
+        let near = placard.reach.is_none_or(|reach| distance < reach);
         match camera.world_to_viewport(camera_at, seat) {
             Ok(spot) if near => {
                 node.left = Val::Px(spot.x);
                 node.top = Val::Px(spot.y);
+                // Depth on a flat screen: the whole card shrinks toward
+                // its pinned point as its anchor recedes.
+                let scale = depth_scale(distance, placard.full_within);
+                if ui.scale != Vec2::splat(scale) {
+                    ui.scale = Vec2::splat(scale);
+                }
                 *visibility = Visibility::Inherited;
             }
             _ => *visibility = Visibility::Hidden,
