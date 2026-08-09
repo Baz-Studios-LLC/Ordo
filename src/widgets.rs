@@ -47,6 +47,8 @@ pub enum Anchor {
     Right,
     Top,
     Bottom,
+    /// Dead centre — the proclamation stage. Nothing lives here long.
+    Center,
 }
 
 impl Anchor {
@@ -64,6 +66,7 @@ impl Anchor {
             Anchor::Right => (half, margin, auto, auto),
             Anchor::Top => (margin, auto, auto, half),
             Anchor::Bottom => (auto, auto, margin, half),
+            Anchor::Center => (half, auto, auto, half),
         }
     }
 
@@ -74,6 +77,7 @@ impl Anchor {
         match self {
             Anchor::Left | Anchor::Right => Some(Val2::new(Val::Px(0.0), Val::Percent(-50.0))),
             Anchor::Top | Anchor::Bottom => Some(Val2::new(Val::Percent(-50.0), Val::Px(0.0))),
+            Anchor::Center => Some(Val2::new(Val::Percent(-50.0), Val::Percent(-50.0))),
             _ => None,
         }
     }
@@ -84,7 +88,7 @@ impl Anchor {
         match self {
             Anchor::TopLeft | Anchor::BottomLeft | Anchor::Left => AlignItems::Start,
             Anchor::TopRight | Anchor::BottomRight | Anchor::Right => AlignItems::End,
-            Anchor::Top | Anchor::Bottom => AlignItems::Center,
+            Anchor::Top | Anchor::Bottom | Anchor::Center => AlignItems::Center,
         }
     }
 }

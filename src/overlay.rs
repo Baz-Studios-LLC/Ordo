@@ -8,7 +8,7 @@
 //! colours, so the repaint pass in [`crate::theme`] stays the only thing that
 //! ever sets a colour.
 
-use crate::theme::{Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Role, TextSize};
+use crate::theme::{Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Role, TextSize, Theme};
 use crate::widgets::{Anchor, Anchored, Padded, dim, heading};
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
@@ -517,5 +517,223 @@ mod tests {
                 rung[1]
             );
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Proclamations
+// ---------------------------------------------------------------------------
+
+/// The trumpet, not the doorbell: a centre-stage card for the events a
+/// session gets a handful of — a birth, a founding, a hall raised. It fades
+/// and swells in, holds while its confetti falls, and bows out; when two
+/// great things happen at once, the second WAITS. Ceremony that queues is
+/// ceremony; ceremony that stacks is noise.
+///
+/// The kit owns the stage, the card, the choreography and the confetti.
+/// What the moments are, what they say, what colour they wear and what
+/// sound they make stay the game's.
+#[derive(Debug, Clone)]
+pub struct Proclamation {
+    pub title: String,
+    pub line: String,
+    /// The card's ink — border, title and confetti. Colour is the KIND
+    /// here, part of a game's own language, so it arrives as paint rather
+    /// than as a theme role.
+    pub color: Color,
+    /// An opaque token handed back on the card's press — a game packs
+    /// whatever it needs to answer a click (an entity's bits, an index).
+    pub token: Option<u64>,
+}
+
+/// The waiting line. Push from anywhere; the stage drains it one at a time.
+#[derive(Resource, Default)]
+pub struct Proclamations(pub Vec<Proclamation>);
+
+impl Proclamations {
+    pub fn push(&mut self, proclamation: Proclamation) {
+        self.0.push(proclamation);
+    }
+}
+
+/// Where proclamations play. Spawn one with [`proclamation_stage`]; without
+/// it, pushed proclamations wait patiently and nothing is lost.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct ProclamationStage;
+
+/// The card on stage right now.
+#[derive(Component)]
+pub struct Proclaimed {
+    age: f32,
+    /// Seconds of entrance, hold, and exit.
+    rise: f32,
+    hold: f32,
+    fall: f32,
+    ink: Color,
+}
+
+/// The token of the card on stage, for the game's press handler.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct ProclaimedToken(pub u64);
+
+/// One fleck of card-coloured confetti, living entirely in the interface.
+#[derive(Component)]
+pub(crate) struct Confetti {
+    velocity: Vec2,
+    spin: f32,
+    age: f32,
+    life: f32,
+}
+
+/// Centre stage, above the furniture with the toasts.
+pub fn proclamation_stage() -> impl Bundle {
+    (
+        ProclamationStage,
+        Anchored(Anchor::Center),
+        Layer::Toast,
+        Node {
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        UiTransform {
+            translation: Val2::new(Val::Percent(-50.0), Val::Percent(-50.0)),
+            ..default()
+        },
+    )
+}
+
+/// Puts the next waiting proclamation on an empty stage.
+pub(crate) fn stage_proclamations(
+    mut commands: Commands,
+    mut queue: ResMut<Proclamations>,
+    theme: Res<Theme>,
+    stages: Query<Entity, With<ProclamationStage>>,
+    playing: Query<(), With<Proclaimed>>,
+) {
+    if queue.0.is_empty() || !playing.is_empty() {
+        return;
+    }
+    let Ok(stage) = stages.single() else {
+        return;
+    };
+    let Proclamation {
+        title,
+        line,
+        color,
+        token,
+    } = queue.0.remove(0);
+
+    let card = commands
+        .spawn((
+            Proclaimed {
+                age: 0.0,
+                rise: 0.35,
+                hold: 2.8,
+                fall: 0.7,
+                ink: color,
+            },
+            Interaction::default(),
+            Node {
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                row_gap: theme.px(Metric::Gap),
+                padding: UiRect::axes(Val::Px(26.0), Val::Px(16.0)),
+                border: UiRect::all(Val::Px(2.0)),
+                border_radius: BorderRadius::all(Val::Px(10.0)),
+                ..default()
+            },
+            BackgroundColor(theme.color(Role::PanelBg)),
+            BorderColor::all(color),
+            UiTransform::default(),
+            ChildOf(stage),
+        ))
+        .id();
+    if let Some(token) = token {
+        commands.entity(card).insert(ProclaimedToken(token));
+    }
+    let title_entity = commands.spawn(heading(&title)).id();
+    commands
+        .entity(title_entity)
+        .insert((TextColor(color), ChildOf(card)));
+    let line_entity = commands.spawn(dim(&line)).id();
+    commands.entity(line_entity).insert(ChildOf(card));
+
+    // The confetti: a dozen flecks of the card's own colour, thrown from
+    // the top corners, falling under interface gravity.
+    for i in 0..14 {
+        let side = if i % 2 == 0 { -1.0 } else { 1.0 };
+        let throw = 30.0 + (i as f32 * 7.3) % 60.0;
+        commands.spawn((
+            Confetti {
+                velocity: Vec2::new(side * throw, -90.0 - (i as f32 * 11.0) % 70.0),
+                spin: side * (60.0 + (i as f32 * 23.0) % 120.0),
+                age: 0.0,
+                life: 1.3 + (i as f32 * 0.13) % 0.8,
+            },
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Percent(8.0),
+                left: Val::Percent(if side < 0.0 { 6.0 } else { 94.0 }),
+                width: Val::Px(5.0),
+                height: Val::Px(8.0),
+                ..default()
+            },
+            BackgroundColor(color),
+            UiTransform::default(),
+            ChildOf(card),
+        ));
+    }
+}
+
+/// Plays the card: swell in, hold, bow out — and rains the confetti.
+pub(crate) fn play_proclamations(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut cards: Query<(Entity, &mut Proclaimed, &mut UiTransform, &mut BorderColor)>,
+    mut flecks: Query<
+        (
+            Entity,
+            &mut Confetti,
+            &mut UiTransform,
+            &mut BackgroundColor,
+        ),
+        Without<Proclaimed>,
+    >,
+) {
+    let dt = time.delta_secs();
+    for (card, mut played, mut pose, mut border) in &mut cards {
+        played.age += dt;
+        let (rise, hold, fall) = (played.rise, played.hold, played.fall);
+        let scale = if played.age < rise {
+            // Swell: most of the size arrives early, the last sliver eases.
+            let t = (played.age / rise).clamp(0.0, 1.0);
+            0.86 + 0.14 * (1.0 - (1.0 - t) * (1.0 - t))
+        } else {
+            1.0
+        };
+        pose.scale = Vec2::splat(scale);
+        // The border breathes while the card holds.
+        let breathing = 0.75 + 0.25 * (played.age * 5.0).sin().abs();
+        *border = BorderColor::all(played.ink.with_alpha(breathing));
+        if played.age > rise + hold + fall {
+            commands.entity(card).despawn();
+        }
+    }
+    // Interface gravity: down is +y in screen space.
+    for (fleck, mut confetti, mut pose, mut paint) in &mut flecks {
+        confetti.age += dt;
+        if confetti.age > confetti.life {
+            commands.entity(fleck).despawn();
+            continue;
+        }
+        confetti.velocity.y += 240.0 * dt;
+        let x = confetti.velocity.x * confetti.age;
+        let y = confetti.velocity.y * confetti.age * 0.5;
+        pose.translation = Val2::new(Val::Px(x), Val::Px(y));
+        pose.rotation = Rot2::degrees(confetti.spin * confetti.age);
+        let fade = 1.0 - (confetti.age / confetti.life);
+        let color = paint.0.with_alpha(fade);
+        paint.0 = color;
     }
 }

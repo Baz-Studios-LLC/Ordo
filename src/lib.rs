@@ -39,7 +39,8 @@ pub mod window;
 use bevy::prelude::*;
 
 pub use overlay::{
-    Layer, Lifetime, Notice, Notices, Toast, ToastShelf, Tooltip, TooltipView, shelf, toast_shelf,
+    Layer, Lifetime, Notice, Notices, Proclaimed, ProclaimedToken, Proclamation, ProclamationStage,
+    Proclamations, Toast, ToastShelf, Tooltip, TooltipView, proclamation_stage, shelf, toast_shelf,
 };
 pub use placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
 pub use theme::{
@@ -109,6 +110,7 @@ impl Plugin for OrdoPlugin {
             .init_resource::<Theme>()
             .init_resource::<Ramps>()
             .init_resource::<Notices>()
+            .init_resource::<overlay::Proclamations>()
             .init_resource::<overlay::HoverClock>()
             .init_resource::<window::Dragging>()
             .add_systems(
@@ -121,6 +123,9 @@ impl Plugin for OrdoPlugin {
                     placard::raise_placards,
                     placard::place_placards,
                     overlay::show_notices,
+                    // Paired: the chain tuple is at Bevy's ceiling, and these
+                    // two are one subject - the stage and its player.
+                    (overlay::stage_proclamations, overlay::play_proclamations),
                     overlay::cap_shelf,
                     overlay::track_hover,
                     overlay::show_tooltips,
