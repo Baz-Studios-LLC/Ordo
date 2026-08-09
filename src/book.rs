@@ -256,6 +256,35 @@ pub fn adorn(commands: &mut Commands, frame: Entity) {
     }
 }
 
+/// A row on the page grid.
+///
+/// The book's alignment law: every chapter lays out on THREE column
+/// tracts with one gutter, and every edge in the book lands on the same
+/// verticals. Brett: "If everything fit these three column widths then
+/// everything would always align... every tab could align to this
+/// philosophy." Children are columns made with [`col`]; fractional
+/// widths against a shared gutter is the whole trick.
+pub fn grid_row(gutter: f32) -> impl Bundle {
+    Node {
+        width: Val::Percent(100.0),
+        flex_direction: FlexDirection::Row,
+        column_gap: Val::Px(gutter),
+        ..default()
+    }
+}
+
+/// A column spanning `weight` of the grid's three tracts: col(1) beside
+/// col(2) splits a row exactly where three col(1)s would put their seams.
+pub fn col(weight: u8) -> impl Bundle {
+    Node {
+        flex_grow: weight as f32,
+        flex_basis: Val::Px(0.0),
+        min_width: Val::Px(0.0),
+        flex_direction: FlexDirection::Column,
+        ..default()
+    }
+}
+
 /// A count chip: a small colour-edged pill carrying a label and a live
 /// numeral — "HUNTERS 3" in the hunter's own leather-brown. The caller
 /// writes the numeral; the colour is the caller's language.
