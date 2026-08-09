@@ -30,6 +30,7 @@
 //!     .run();
 //! ```
 
+pub mod book;
 pub mod overlay;
 pub mod placard;
 pub mod theme;
@@ -38,6 +39,7 @@ pub mod window;
 
 use bevy::prelude::*;
 
+pub use book::{BookParts, ChapterButton, ChipParts, adorn, book, chapter, chip, plate};
 pub use overlay::{
     Layer, Lifetime, Notice, Notices, Proclaimed, ProclaimedToken, Proclamation, ProclamationStage,
     Proclamations, Toast, ToastShelf, Tooltip, TooltipView, proclamation_stage, shelf, toast_shelf,
@@ -45,7 +47,7 @@ pub use overlay::{
 pub use placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
 pub use theme::{
     ColorSpec, Edge, Face, Fill, FontFace, FontRole, FontSpec, Ink, Metric, Opacity, Ramps, Role,
-    TextSize, Theme, ThemeAsset, ThemeHandle,
+    Sheen, TextSize, Theme, ThemeAsset, ThemeHandle,
 };
 pub use widgets::{
     Anchor, Anchored, LabelColumn, OrdoButton, Padded, Panel, RowHeight, backdrop, body, button,

@@ -15,6 +15,7 @@
 use bevy::asset::io::Reader;
 use bevy::asset::{AssetLoader, AsyncReadExt, LoadContext};
 use bevy::prelude::*;
+use bevy::ui::{BackgroundGradient, ColorStop, InterpolationColorSpace, LinearGradient};
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -215,6 +216,30 @@ pub struct Fill(pub Role);
 /// This node's `BorderColor` follows a role.
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Edge(pub Role);
+
+/// A vertical two-role gradient fill — the kit's material depth. A panel
+/// wearing a sheen reads as a surface with light falling on it instead of
+/// a flat rectangle, which is most of the distance between "programmer
+/// UI" and "someone crafted this". Painted from the theme like
+/// [`Fill`]; the alphas ride along so chrome can stay translucent.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct Sheen {
+    pub top: Role,
+    pub top_alpha: f32,
+    pub bottom: Role,
+    pub bottom_alpha: f32,
+}
+
+impl Sheen {
+    pub fn new(top: Role, top_alpha: f32, bottom: Role, bottom_alpha: f32) -> Self {
+        Sheen {
+            top,
+            top_alpha,
+            bottom,
+            bottom_alpha,
+        }
+    }
+}
 
 /// This text's `TextColor` follows a role.
 #[derive(Component, Debug, Clone, Copy)]
@@ -545,6 +570,7 @@ pub(crate) fn apply_theme_asset(
 pub(crate) fn repaint(
     theme: Res<Theme>,
     mut fills: Query<(&Fill, Option<&Opacity>, &mut BackgroundColor)>,
+    mut sheens: Query<(&Sheen, Option<&Opacity>, &mut BackgroundGradient)>,
     mut edges: Query<(&Edge, Option<&Opacity>, &mut BorderColor)>,
     mut inks: Query<(&Ink, Option<&Opacity>, &mut TextColor)>,
     // One query, because `TextSize` and `Face` both write `TextFont` and two
@@ -557,6 +583,7 @@ pub(crate) fn repaint(
         (),
         Or<(
             Added<Fill>,
+            Added<Sheen>,
             Added<Edge>,
             Added<Ink>,
             Added<TextSize>,
@@ -570,6 +597,20 @@ pub(crate) fn repaint(
     }
     for (fill, opacity, mut background) in &mut fills {
         *background = BackgroundColor(tinted(&theme, fill.0, opacity));
+    }
+    for (sheen, opacity, mut gradient) in &mut sheens {
+        let mut top = tinted(&theme, sheen.top, opacity);
+        top.set_alpha(top.alpha() * sheen.top_alpha);
+        let mut bottom = tinted(&theme, sheen.bottom, opacity);
+        bottom.set_alpha(bottom.alpha() * sheen.bottom_alpha);
+        *gradient = BackgroundGradient::from(LinearGradient {
+            color_space: InterpolationColorSpace::default(),
+            angle: LinearGradient::TO_BOTTOM,
+            stops: vec![
+                ColorStop::new(top, Val::Percent(0.0)),
+                ColorStop::new(bottom, Val::Percent(100.0)),
+            ],
+        });
     }
     for (edge, opacity, mut border) in &mut edges {
         *border = BorderColor::all(tinted(&theme, edge.0, opacity));
