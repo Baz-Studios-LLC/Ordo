@@ -34,23 +34,57 @@ pub struct Anchored(pub Anchor);
 #[derive(Component, Debug, Clone, Copy)]
 pub struct LabelColumn;
 
-/// Where a panel sits. Corners rather than free placement: a HUD is furniture.
+/// Where a panel sits. Corners and edge-midpoints rather than free
+/// placement: a HUD is furniture, and furniture stands against the walls.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Anchor {
     TopLeft,
     TopRight,
     BottomLeft,
     BottomRight,
+    /// Centred on an edge — a quest tracker's home, halfway up the left.
+    Left,
+    Right,
+    Top,
+    Bottom,
 }
 
 impl Anchor {
     fn offsets(self, margin: Val) -> (Val, Val, Val, Val) {
         let auto = Val::Auto;
+        let half = Val::Percent(50.0);
         match self {
             Anchor::TopLeft => (margin, auto, auto, margin),
             Anchor::TopRight => (margin, margin, auto, auto),
             Anchor::BottomLeft => (auto, auto, margin, margin),
             Anchor::BottomRight => (auto, margin, margin, auto),
+            // The centred axis pins at fifty percent; `centering` hands the
+            // matching half-size pullback, applied once at spawn.
+            Anchor::Left => (half, auto, auto, margin),
+            Anchor::Right => (half, margin, auto, auto),
+            Anchor::Top => (margin, auto, auto, half),
+            Anchor::Bottom => (auto, auto, margin, half),
+        }
+    }
+
+    /// The translation that turns an edge pin into an edge CENTRE — minus
+    /// half the panel's own size along the pinned axis. `None` for corners,
+    /// which sit where their offsets put them.
+    pub fn centering(self) -> Option<Val2> {
+        match self {
+            Anchor::Left | Anchor::Right => Some(Val2::new(Val::Px(0.0), Val::Percent(-50.0))),
+            Anchor::Top | Anchor::Bottom => Some(Val2::new(Val::Percent(-50.0), Val::Px(0.0))),
+            _ => None,
+        }
+    }
+
+    /// How a stack against this wall lines its cards up: hugging the edge
+    /// it stands on.
+    pub fn ranks(self) -> AlignItems {
+        match self {
+            Anchor::TopLeft | Anchor::BottomLeft | Anchor::Left => AlignItems::Start,
+            Anchor::TopRight | Anchor::BottomRight | Anchor::Right => AlignItems::End,
+            Anchor::Top | Anchor::Bottom => AlignItems::Center,
         }
     }
 }
@@ -182,12 +216,7 @@ fn text_in(content: &str, role: Role, size: Metric, face: FontRole) -> impl Bund
 /// A title. Accent-coloured and set in the display face, because the eye should
 /// find it first.
 pub fn heading(content: &str) -> impl Bundle {
-    text_in(
-        content,
-        Role::Accent,
-        Metric::TitleSize,
-        FontRole::Display,
-    )
+    text_in(content, Role::Accent, Metric::TitleSize, FontRole::Display)
 }
 
 /// Body copy.
@@ -244,11 +273,7 @@ pub(crate) fn resize_rows(
 
 /// The label half of a labelled row: fixed-width, dim, left-aligned.
 pub fn label(content: &str) -> impl Bundle {
-    (
-        LabelColumn,
-        Node::default(),
-        children![dim(content)],
-    )
+    (LabelColumn, Node::default(), children![dim(content)])
 }
 
 // ---------------------------------------------------------------------------
@@ -295,7 +320,12 @@ pub(crate) fn paint_buttons(
     every: Query<Entity, With<OrdoButton>>,
     mut released: RemovedComponents<Pressed>,
     mut buttons: Query<
-        (&Hovered, Has<Pressed>, &mut BackgroundColor, &mut BorderColor),
+        (
+            &Hovered,
+            Has<Pressed>,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
         With<OrdoButton>,
     >,
 ) {

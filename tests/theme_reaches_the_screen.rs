@@ -4,8 +4,8 @@
 
 use bevy::asset::AssetPlugin;
 use bevy::prelude::*;
-use ordo::prelude::*;
 use ordo::Fill;
+use ordo::prelude::*;
 
 #[test]
 fn a_theme_file_reaches_a_nodes_colour() {

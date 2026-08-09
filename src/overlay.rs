@@ -199,6 +199,30 @@ pub const TOAST_LIFE: f32 = 4.5;
 pub const TOAST_FADE: f32 = 0.45;
 
 /// Somewhere for toasts to stack. Spawn one; the rest is automatic.
+/// A shelf: an edge-docked stack of cards. Quest trackers, buff bars,
+/// objective pins, toast trays — every game wants at least one wall of
+/// small cards, and this is the wall. Dock it to a corner or an edge
+/// centre; it stacks its children downward, ranked against the edge it
+/// stands on, and leaves what the cards ARE entirely to the game.
+pub fn shelf(anchor: Anchor) -> impl Bundle {
+    (
+        Anchored(anchor),
+        Layer::Panel,
+        Node {
+            flex_direction: FlexDirection::Column,
+            align_items: anchor.ranks(),
+            row_gap: px(6.0),
+            ..default()
+        },
+        UiTransform {
+            translation: anchor
+                .centering()
+                .unwrap_or(Val2::new(Val::Px(0.0), Val::Px(0.0))),
+            ..default()
+        },
+    )
+}
+
 pub fn toast_shelf(anchor: Anchor) -> impl Bundle {
     (
         ToastShelf,

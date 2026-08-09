@@ -39,7 +39,10 @@ fn build(mut commands: Commands) {
             stat("Rainfall", "light"),
             (
                 card(),
-                children![dim("A well reads as its own surface."), stat("Mood", "content")]
+                children![
+                    dim("A well reads as its own surface."),
+                    stat("Mood", "content")
+                ]
             ),
             button("Dismiss"),
         ],

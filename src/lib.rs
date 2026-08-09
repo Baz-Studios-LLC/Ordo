@@ -39,7 +39,7 @@ pub mod window;
 use bevy::prelude::*;
 
 pub use overlay::{
-    Layer, Lifetime, Notice, Notices, Toast, ToastShelf, Tooltip, TooltipView, toast_shelf,
+    Layer, Lifetime, Notice, Notices, Toast, ToastShelf, Tooltip, TooltipView, shelf, toast_shelf,
 };
 pub use placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
 pub use theme::{
@@ -53,7 +53,7 @@ pub use widgets::{
 
 pub mod prelude {
     pub use crate::OrdoPlugin;
-    pub use crate::overlay::{Layer, Lifetime, Notice, Notices, Tooltip, toast_shelf};
+    pub use crate::overlay::{Layer, Lifetime, Notice, Notices, Tooltip, shelf, toast_shelf};
     pub use crate::placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
     pub use crate::theme::{
         Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Ramps, Role, TextSize, Theme,

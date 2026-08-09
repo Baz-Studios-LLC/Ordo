@@ -139,10 +139,7 @@ pub fn pin(
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Rising(pub f32);
 
-pub(crate) fn raise_placards(
-    time: Res<Time>,
-    mut rising: Query<(&mut Placard, &Rising)>,
-) {
+pub(crate) fn raise_placards(time: Res<Time>, mut rising: Query<(&mut Placard, &Rising)>) {
     for (mut placard, rate) in &mut rising {
         placard.lift += rate.0 * time.delta_secs();
     }

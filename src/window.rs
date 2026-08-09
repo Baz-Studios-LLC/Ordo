@@ -218,7 +218,12 @@ pub fn focus_windows(
     buttons: Res<ButtonInput<MouseButton>>,
     primary: Query<&bevy::window::Window, With<bevy::window::PrimaryWindow>>,
     windows: Query<
-        (Entity, &ComputedNode, &UiGlobalTransform, &InheritedVisibility),
+        (
+            Entity,
+            &ComputedNode,
+            &UiGlobalTransform,
+            &InheritedVisibility,
+        ),
         With<Window>,
     >,
     shown: Query<Entity, (With<Window>, Changed<Visibility>)>,

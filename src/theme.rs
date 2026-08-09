@@ -319,10 +319,7 @@ impl FontSpec {
         };
         Some(FontFace {
             source,
-            weight: self
-                .weight
-                .map(FontWeight)
-                .unwrap_or(FontWeight::NORMAL),
+            weight: self.weight.map(FontWeight).unwrap_or(FontWeight::NORMAL),
             style: if self.italic {
                 FontStyle::Italic
             } else {
@@ -664,7 +661,9 @@ mod tests {
             shade: 0.5,
             alpha: 0.25,
         };
-        let color = spec.resolve(&ramps).expect("registered ramp should resolve");
+        let color = spec
+            .resolve(&ramps)
+            .expect("registered ramp should resolve");
         assert_eq!(color.to_srgba().red, 0.25);
         assert_eq!(color.alpha(), 0.25);
     }

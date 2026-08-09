@@ -77,10 +77,7 @@ fn build(mut commands: Commands) {
         .with_children(|panel| {
             panel.spawn(heading("Metrics"));
             for (metric, name) in METRICS {
-                panel.spawn((
-                    row(),
-                    children![label(name), (body("—"), Readout(*metric))],
-                ));
+                panel.spawn((row(), children![label(name), (body("—"), Readout(*metric))]));
             }
         });
 
@@ -118,7 +115,10 @@ fn build(mut commands: Commands) {
                         button("Flood"),
                         Says("Six at once."),
                         Flood,
-                        Tooltip::new("Flood", "Posts eight, so the shelf evicts down to its cap of six."),
+                        Tooltip::new(
+                            "Flood",
+                            "Posts eight, so the shelf evicts down to its cap of six."
+                        ),
                     ),
                 ],
             ));
@@ -186,10 +186,7 @@ struct Status;
 
 /// Observers are added after the tree exists, so the buttons are found by their
 /// marker rather than threaded back out of the builder.
-fn arm_buttons(
-    mut commands: Commands,
-    buttons: Query<Entity, (With<Says>, Added<Says>)>,
-) {
+fn arm_buttons(mut commands: Commands, buttons: Query<Entity, (With<Says>, Added<Says>)>) {
     for entity in &buttons {
         commands.entity(entity).observe(announce);
     }
