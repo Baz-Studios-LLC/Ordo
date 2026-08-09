@@ -40,7 +40,8 @@ pub mod window;
 use bevy::prelude::*;
 
 pub use book::{
-    BookParts, ChapterButton, ChipParts, adorn, book, chapter, chip, col, grid_row, plate,
+    BookParts, ChapterButton, ChipParts, PageParts, adorn, book, chapter, chip, col, grid_row,
+    page, plate,
 };
 pub use overlay::{
     Layer, Lifetime, Notice, Notices, Proclaimed, ProclaimedToken, Proclamation, ProclamationStage,

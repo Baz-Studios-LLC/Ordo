@@ -273,15 +273,69 @@ pub fn grid_row(gutter: f32) -> impl Bundle {
     }
 }
 
-/// A column spanning `weight` of the grid's three tracts: col(1) beside
-/// col(2) splits a row exactly where three col(1)s would put their seams.
-pub fn col(weight: u8) -> impl Bundle {
+/// A column spanning `weight` of the grid's three tracts.
+///
+/// The span law: a column across N tracts must ABSORB the N-1 interior
+/// gutters, or every multi-tract edge drifts a third of a gutter off the
+/// ruler. The flex basis carries exactly those gutters; the weights then
+/// split what remains into true tracts, and col(1) beside col(2) seams
+/// precisely where three col(1)s would.
+pub fn col(weight: u8, gutter: f32) -> impl Bundle {
     Node {
         flex_grow: weight as f32,
-        flex_basis: Val::Px(0.0),
+        flex_basis: Val::Px((weight.saturating_sub(1)) as f32 * gutter),
         min_width: Val::Px(0.0),
         flex_direction: FlexDirection::Column,
         ..default()
+    }
+}
+
+/// A chapter page's anatomy: a top gutter, the ruled body, a bottom
+/// gutter. The gutters run full width and are EXEMPT from the rule of
+/// three — mastheads, pill rows and status lines live there free — while
+/// everything in the body lays out on the grid's three tracts. Brett:
+/// "the pages could have a top gutter and bottom gutter that aren't
+/// included in the rule of three."
+pub struct PageParts {
+    pub header: Entity,
+    pub body: Entity,
+    pub footer: Entity,
+}
+
+pub fn page(commands: &mut Commands, parent: Entity, gutter: f32) -> PageParts {
+    let band = |commands: &mut Commands| {
+        commands
+            .spawn((
+                Node {
+                    width: Val::Percent(100.0),
+                    flex_shrink: 0.0,
+                    flex_direction: FlexDirection::Column,
+                    row_gap: Val::Px(gutter),
+                    ..default()
+                },
+                ChildOf(parent),
+            ))
+            .id()
+    };
+    let header = band(commands);
+    let body = commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                flex_grow: 1.0,
+                min_height: Val::Px(0.0),
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(gutter),
+                ..default()
+            },
+            ChildOf(parent),
+        ))
+        .id();
+    let footer = band(commands);
+    PageParts {
+        header,
+        body,
+        footer,
     }
 }
 

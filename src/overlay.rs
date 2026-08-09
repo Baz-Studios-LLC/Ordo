@@ -608,15 +608,21 @@ pub(crate) fn stage_proclamations(
     mut commands: Commands,
     mut queue: ResMut<Proclamations>,
     theme: Res<Theme>,
-    stages: Query<Entity, With<ProclamationStage>>,
+    stages: Query<(Entity, &Node), With<ProclamationStage>>,
     playing: Query<(), With<Proclaimed>>,
 ) {
     if queue.0.is_empty() || !playing.is_empty() {
         return;
     }
-    let Ok(stage) = stages.single() else {
+    let Ok((stage, node)) = stages.single() else {
         return;
     };
+    // A hidden stage holds the queue: a trumpet blown behind a covering
+    // (a game's full-screen book, a cutscene) would spend the ceremony
+    // on nobody. It plays the moment the stage stands again.
+    if node.display == Display::None {
+        return;
+    }
     let Proclamation {
         title,
         line,
