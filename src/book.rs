@@ -54,7 +54,7 @@ pub fn book(commands: &mut Commands, title: &str, subtitle: &str) -> BookParts {
             },
             // The world dims behind the page but stays visible: a god
             // reads while the world turns.
-            BackgroundColor(Color::BLACK.with_alpha(0.42)),
+            BackgroundColor(Color::BLACK.with_alpha(0.55)),
         ))
         .id();
 
@@ -74,7 +74,10 @@ pub fn book(commands: &mut Commands, title: &str, subtitle: &str) -> BookParts {
             BackgroundGradient::default(),
             Sheen::new(Role::TitleBg, 1.0, Role::PanelBg, 1.0),
             Edge(Role::Accent),
-            crate::theme::Opacity(0.55),
+            // Frosted glass: the game blurs the world under an open book,
+            // so the page can glow faintly with it and the text still owns
+            // every pixel. Solid enough to read, alive enough to feel.
+            crate::theme::Opacity(0.92),
             ChildOf(root),
         ))
         .id();
