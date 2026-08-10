@@ -102,7 +102,20 @@ pub fn book(commands: &mut Commands, title: &str, subtitle: &str) -> BookParts {
         ))
         .id();
     let title_entity = commands.spawn((heading(title), ChildOf(rail))).id();
-    let subtitle_entity = commands.spawn((dim(subtitle), ChildOf(rail))).id();
+    // The subtitle's seat holds TWO lines whether the words take one or
+    // two, so the chapter list below never shifts as pages turn.
+    let subtitle_seat = commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                min_height: Val::Px(38.0),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            ChildOf(rail),
+        ))
+        .id();
+    let subtitle_entity = commands.spawn((dim(subtitle), ChildOf(subtitle_seat))).id();
     commands.spawn((
         Node {
             width: Val::Percent(100.0),
