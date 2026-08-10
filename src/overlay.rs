@@ -384,13 +384,20 @@ pub(crate) fn show_tooltips(
             }
             commands.spawn((
                 TooltipView,
-                Padded,
                 Layer::Tooltip,
                 Opacity(0.0),
                 Node {
                     position_type: PositionType::Absolute,
                     flex_direction: FlexDirection::Column,
                     max_width: px(280.0),
+                    row_gap: px(6.0),
+                    // Hand-padded rather than Padded: descenders eat the
+                    // bottom margin optically, so the floor runs a step
+                    // deeper than the theme pad or the last line reads
+                    // as kissing the border.
+                    padding: UiRect::all(px(13.0)).with_bottom(px(17.0)),
+                    border: UiRect::all(px(1.0)),
+                    border_radius: BorderRadius::all(px(6.0)),
                     ..default()
                 },
                 BackgroundColor(Color::NONE),
