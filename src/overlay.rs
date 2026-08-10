@@ -426,6 +426,10 @@ pub(crate) fn place_tooltips(
         // A guess at the hint's extent is enough to decide which side of the
         // cursor it belongs on; being exact would need a frame of layout, and
         // the hint would visibly jump.
+        //
+        // Home position is UP AND TO THE RIGHT of the point: a pointer's
+        // body - an arrow's shaft, a divine hand's palm - hangs below and
+        // right of its tip, and a hint under the palm is a hint unread.
         if cursor.x > width - 300.0 {
             node.left = Val::Auto;
             node.right = px(width - cursor.x + 16.0);
@@ -433,12 +437,12 @@ pub(crate) fn place_tooltips(
             node.right = Val::Auto;
             node.left = px(cursor.x + 16.0);
         }
-        if cursor.y > height - 120.0 {
-            node.top = Val::Auto;
-            node.bottom = px(height - cursor.y + 16.0);
-        } else {
+        if cursor.y < 140.0 {
             node.bottom = Val::Auto;
             node.top = px(cursor.y + 20.0);
+        } else {
+            node.top = Val::Auto;
+            node.bottom = px(height - cursor.y + 12.0);
         }
 
         let want = (opacity.0 + time.delta_secs() / TOOLTIP_DELAY).min(1.0);
