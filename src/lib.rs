@@ -188,6 +188,7 @@ impl Plugin for OrdoPlugin {
                     // Before the button paint, which reads the `Selected` this puts on.
                     tabs::space_strips,
                     tabs::show_selected_pane,
+                    tabs::shape_tabs,
                     stepper::size_steppers,
                 )
                     .chain()
@@ -197,6 +198,15 @@ impl Plugin for OrdoPlugin {
                     // tab puts on.
                     .after(widgets::relayout)
                     .before(widgets::paint_buttons),
+            )
+            // After the button paint, which it overwrites for tabs: that pass writes one
+            // colour all the way round and a tab is the one widget that wants an edge of its
+            // own.
+            .add_systems(
+                Update,
+                tabs::paint_tabs
+                    .in_set(OrdoSet)
+                    .after(widgets::paint_buttons),
             )
             .add_observer(tabs::open_tab);
 

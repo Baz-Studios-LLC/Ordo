@@ -25,6 +25,7 @@
 //! commands.spawn((Pane { strip, index: 0 }, Node::default(), children![body("...")]));
 //! ```
 
+use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
 use bevy::ui_widgets::Activate;
 
@@ -190,6 +191,81 @@ pub fn pane(strip: Entity, index: usize) -> impl Bundle {
 /// Is this button an open tab? Used by the button painter.
 pub(crate) fn is_selected(marked: bool) -> Option<(Role, Role)> {
     marked.then_some(SELECTED_FACE)
+}
+
+/// How much thicker the accent bar on an open tab is than an ordinary hairline.
+const BAR_WEIGHT: f32 = 3.0;
+
+/// Gives a tab a tab's *shape*: square-shouldered at the bottom, rounded on top, a heavy top
+/// edge to carry the accent, and no bottom edge at all.
+///
+/// Without this a tab is a button, and reads as one however it is coloured. A tab is a card
+/// with one side missing — the side it shares with the pane below it — and the shape is what
+/// says so before any colour does.
+pub(crate) fn shape_tabs(
+    theme: Res<Theme>,
+    mut tabs: Query<&mut Node, With<Tab>>,
+    fresh: Query<(), Added<Tab>>,
+) {
+    if !theme.is_changed() && fresh.is_empty() {
+        return;
+    }
+    let hairline = theme.metric(Metric::Border);
+    let radius = theme.px(Metric::Radius);
+    for mut node in &mut tabs {
+        node.border = UiRect {
+            left: px(hairline),
+            right: px(hairline),
+            top: px(hairline * BAR_WEIGHT),
+            bottom: px(0.0),
+        };
+        node.border_radius = BorderRadius {
+            top_left: radius,
+            top_right: radius,
+            bottom_left: px(0.0),
+            bottom_right: px(0.0),
+        };
+        // Down over whatever rule the game has drawn beneath the strip, by exactly a
+        // hairline. An open tab's fill then covers that rule and joins the pane; a closed
+        // one's own bottom edge is the rule at that point. This is the join that makes a
+        // strip of tabs read as one piece of furniture with the content.
+        node.margin = UiRect::bottom(px(-hairline));
+    }
+}
+
+/// Paints a tab's chrome, per edge.
+///
+/// Runs *after* `paint_buttons`, and overwrites it for tabs. That pass has to write
+/// `BorderColor::all` — every other button wants one colour all the way round — and a tab is
+/// the one widget that wants a different colour on one edge, which is the whole effect: the
+/// accent sits on the top of the open tab and nowhere else.
+pub(crate) fn paint_tabs(
+    theme: Res<Theme>,
+    mut tabs: Query<(&Hovered, Has<Selected>, &mut BackgroundColor, &mut BorderColor), With<Tab>>,
+) {
+    let accent = theme.color(Role::Accent);
+    let edge = theme.color(Role::PanelBorder);
+    let content = theme.color(Role::CardBg);
+    let closed = theme.color(Role::ButtonIdle);
+    let hovered_fill = theme.color(Role::ButtonHover);
+
+    for (hovered, open, mut background, mut border) in &mut tabs {
+        // An open tab is filled with the *content's* colour, which is what joins it to the
+        // pane below. A closed one keeps a button's face, so the strip reads as a row of
+        // things you can press with one of them already open.
+        *background = BackgroundColor(match (open, hovered.get()) {
+            (true, _) => content,
+            (false, true) => hovered_fill,
+            (false, false) => closed,
+        });
+        *border = BorderColor {
+            top: if open { accent } else { edge },
+            left: edge,
+            right: edge,
+            // Nothing at the foot of an open tab: it is continuous with the pane.
+            bottom: if open { content } else { edge },
+        };
+    }
 }
 
 #[cfg(test)]
