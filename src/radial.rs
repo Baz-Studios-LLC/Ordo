@@ -103,21 +103,32 @@ pub fn radial(at: Vec2, count: usize) -> impl Bundle {
     )
 }
 
-/// One labelled wedge. Position comes from [`place_wedges`], colour from
-/// [`paint_wedges`].
+/// One labelled wedge: a centred box holding a single line of text.
+///
+/// A box rather than a bare text node, because a bare one has no width to centre on and
+/// wraps at whatever the layout gives it — "Ant Kit 1" came out as three stacked lines
+/// spilling over the edge of its slice. The box is sized and placed by [`place_wedges`];
+/// colour comes from [`paint_wedges`].
 pub fn wedge(index: usize, content: &str) -> impl Bundle {
     (
         Wedge(index),
         Node {
             position_type: PositionType::Absolute,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            overflow: Overflow::visible(),
             ..default()
         },
-        Text::new(content.to_string()),
-        TextFont::default(),
-        TextSize(Metric::BodySize),
-        Face(FontRole::Body),
-        // Owned by `paint_wedges` from here on — see the module note.
-        TextColor(Color::WHITE),
+        children![(
+            Text::new(content.to_string()),
+            TextFont::default(),
+            TextSize(Metric::BodySize),
+            Face(FontRole::Body),
+            // One line, always. A slice is not wide enough to wrap inside.
+            TextLayout::no_wrap().with_justify(Justify::Center),
+            // Owned by `paint_wedges` from here on — see the module note.
+            TextColor(Color::WHITE),
+        )],
     )
 }
 
@@ -136,18 +147,20 @@ pub(crate) fn place_wedges(
     }
 
     let radius = theme.metric(Metric::RadialRadius);
+    // A box wide enough for a short label and tall enough for one line of it. Centring a
+    // known box beats guessing at text metrics, which aren't known until layout has run.
+    let box_w = radius * LABEL_BOX_W;
+    let box_h = theme.metric(Metric::BodySize) * LABEL_BOX_H;
 
     for (Wedge(index), parent, mut node) in &mut wedges {
         let Ok(hub) = hubs.get(parent.parent()) else {
             continue;
         };
         let at = hub.direction(*index) * radius;
-        // Nudged back by half a line so a label reads as centred on its point
-        // rather than hanging off it. Text has no measured size until layout has
-        // run, so a fraction of the body size is the honest approximation.
-        let half_line = theme.metric(Metric::BodySize) * 0.5;
-        node.left = px(at.x - half_line * 2.0);
-        node.top = px(at.y - half_line);
+        node.width = px(box_w);
+        node.height = px(box_h);
+        node.left = px(at.x - box_w * 0.5);
+        node.top = px(at.y - box_h * 0.5);
     }
 }
 
@@ -157,14 +170,15 @@ pub(crate) fn place_wedges(
 pub(crate) fn paint_wedges(
     theme: Res<Theme>,
     hubs: Query<&Radial>,
-    mut wedges: Query<(&Wedge, &ChildOf, Has<Spent>, &mut TextColor)>,
+    wedges: Query<(&Wedge, &ChildOf, Has<Spent>, &Children)>,
+    mut inks: Query<&mut TextColor>,
     changed: Query<(), Or<(Changed<Radial>, Added<Wedge>)>>,
 ) {
     if !theme.is_changed() && changed.is_empty() {
         return;
     }
 
-    for (Wedge(index), parent, spent, mut colour) in &mut wedges {
+    for (Wedge(index), parent, spent, children) in &wedges {
         let Ok(hub) = hubs.get(parent.parent()) else {
             continue;
         };
@@ -176,7 +190,11 @@ pub(crate) fn paint_wedges(
         } else {
             Role::Ink
         };
-        colour.0 = theme.color(role);
+        for &child in children {
+            if let Ok(mut colour) = inks.get_mut(child) {
+                colour.0 = theme.color(role);
+            }
+        }
     }
 }
 
@@ -252,10 +270,19 @@ pub struct RadialArt {
 /// this only decides how crisp the edges are.
 const ART_SIZE: u32 = 256;
 /// The ring straddles the wedge radius, so labels sit on it rather than beside it.
-const RING_OUTER: f32 = 1.34;
-const RING_INNER: f32 = 0.54;
+const RING_OUTER: f32 = 1.46;
+const RING_INNER: f32 = 0.34;
+/// The wheel sits over a live world, so it is always translucent regardless of how
+/// opaque the role it borrows happens to be — a menu that hid what you were pointing at
+/// would be working against itself.
+const RING_ALPHA: f32 = 0.62;
+const HIGHLIGHT_ALPHA: f32 = 0.80;
 /// Gap between slices, as a fraction of one slice.
-const SLICE_GAP: f32 = 0.055;
+const SLICE_GAP: f32 = 0.03;
+
+/// The label box, as a multiple of the radius and of the body text size.
+const LABEL_BOX_W: f32 = 1.05;
+const LABEL_BOX_H: f32 = 2.0;
 /// How much the pointed-at slice grows. Small on purpose: enough to feel like the wheel
 /// answered, not enough to move the label out from under the cursor.
 const HIGHLIGHT_GROW: f32 = 1.07;
@@ -354,10 +381,16 @@ pub(crate) fn dress_radials(
             )
         };
 
-        commands.spawn((RadialDisc, plate(ring, theme.color(Role::CardBg)), ChildOf(hub)));
+        let fade = |role: Role, alpha: f32| theme.color(role).with_alpha(alpha);
+
+        commands.spawn((
+            RadialDisc,
+            plate(ring, fade(Role::CardBg, RING_ALPHA)),
+            ChildOf(hub),
+        ));
         commands.spawn((
             RadialHighlight,
-            plate(slice, theme.color(Role::Accent)),
+            plate(slice, fade(Role::Accent, HIGHLIGHT_ALPHA)),
             Visibility::Hidden,
             ChildOf(hub),
         ));
