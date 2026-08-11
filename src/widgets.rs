@@ -214,6 +214,34 @@ pub fn card() -> impl Bundle {
     )
 }
 
+/// A hairline divider, full width.
+///
+/// The cheapest thing in the kit and the one that does most for a dense window: a settings
+/// dialog is a stack of unrelated rows, and a rule is how the eye is told where one group
+/// ends. Border rather than background, so it lands on the same hairline as every frame.
+pub fn rule() -> impl Bundle {
+    (
+        Node {
+            width: percent(100),
+            border: UiRect::top(px(1.0)),
+            ..default()
+        },
+        BorderColor::all(Color::NONE),
+        Edge(Role::PanelBorder),
+    )
+}
+
+/// A spacer that eats whatever room is left, so what follows it sits at the far edge.
+///
+/// A row of `[label] [gap] [value]` is the whole shape of a settings line, and doing it with
+/// a fixed label width instead leaves the value stranded in the middle of a wide window.
+pub fn spring() -> impl Bundle {
+    Node {
+        flex_grow: 1.0,
+        ..default()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Text
 // ---------------------------------------------------------------------------

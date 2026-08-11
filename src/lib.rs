@@ -34,6 +34,7 @@ pub mod book;
 pub mod overlay;
 pub mod placard;
 pub mod radial;
+pub mod stepper;
 pub mod tabs;
 pub mod theme;
 pub mod widgets;
@@ -56,7 +57,7 @@ pub use theme::{
 };
 pub use widgets::{
     Anchor, Anchored, LabelColumn, OrdoButton, Padded, Panel, RowHeight, backdrop, body, button,
-    card, dim, heading, label, panel, row,
+    card, dim, heading, label, panel, row, rule, spring,
 };
 
 pub mod prelude {
@@ -64,12 +65,13 @@ pub mod prelude {
     pub use crate::overlay::{Layer, Lifetime, Notice, Notices, Tooltip, shelf, toast_shelf};
     pub use crate::placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
     pub use crate::radial::{Radial, RadialArt, Spent, Wedge, radial, wedge};
+    pub use crate::stepper::{StepperParts, stepper};
     pub use crate::tabs::{Pane, Selected, Tab, Tabs, pane, tab, tab_strip};
     pub use crate::theme::{
         Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Ramps, Role, TextSize, Theme,
     };
     pub use crate::widgets::{
-        Anchor, backdrop, body, button, card, dim, heading, label, panel, row,
+        Anchor, backdrop, body, button, card, dim, heading, label, panel, row, rule, spring,
     };
     pub use crate::window::{CloseButton, DragHandle, Titled, window};
 }
@@ -186,6 +188,7 @@ impl Plugin for OrdoPlugin {
                     // Before the button paint, which reads the `Selected` this puts on.
                     tabs::space_strips,
                     tabs::show_selected_pane,
+                    stepper::size_steppers,
                 )
                     .chain()
                     .in_set(OrdoSet)
