@@ -131,7 +131,7 @@ pub(crate) fn show_selected_pane(
     mut commands: Commands,
     strips: Query<(Entity, &Tabs)>,
     tabs: Query<(Entity, &Tab, &ChildOf, Has<Selected>)>,
-    mut panes: Query<(&Pane, &mut Visibility)>,
+    mut panes: Query<(&Pane, &mut Node)>,
     changed: Query<(), Or<(Changed<Tabs>, Added<Tab>, Added<Pane>)>>,
 ) {
     if changed.is_empty() {
@@ -150,17 +150,21 @@ pub(crate) fn show_selected_pane(
         }
     }
 
-    for (pane, mut visibility) in &mut panes {
+    // `Display::None` rather than `Visibility::Hidden`, and this is the whole difference
+    // between tabs that work and tabs that look broken. Hiding a pane stops it being drawn
+    // and leaves it holding its space, so a window with three panes reserves room for all
+    // three and the open one sits in a column of gaps where the closed ones are standing.
+    for (pane, mut node) in &mut panes {
         let Ok((_, strip)) = strips.get(pane.strip) else {
             continue;
         };
         let want = if strip.selected == pane.index {
-            Visibility::Inherited
+            Display::Flex
         } else {
-            Visibility::Hidden
+            Display::None
         };
-        if *visibility != want {
-            *visibility = want;
+        if node.display != want {
+            node.display = want;
         }
     }
 }

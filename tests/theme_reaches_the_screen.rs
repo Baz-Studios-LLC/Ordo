@@ -172,9 +172,11 @@ fn opening_a_tab_shows_its_pane_and_closes_the_last_one() {
     app.update();
 
     let open = |app: &App, e: Entity| app.world().entity(e).contains::<Selected>();
+    // Display, not Visibility: a hidden pane that still holds its space leaves the open one
+    // sitting in a column of gaps.
     let shown = |app: &App, e: Entity| {
-        *app.world().entity(e).get::<Visibility>().expect("a pane keeps its Visibility")
-            != Visibility::Hidden
+        app.world().entity(e).get::<Node>().expect("a pane keeps its Node").display
+            != Display::None
     };
 
     assert!(open(&app, video), "a strip should open on its first tab");
