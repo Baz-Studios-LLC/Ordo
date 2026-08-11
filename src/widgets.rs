@@ -47,8 +47,15 @@ pub enum Anchor {
     Right,
     Top,
     Bottom,
-    /// Dead centre — the proclamation stage. Nothing lives here long.
+    /// Dead centre — nothing lives here long.
     Center,
+    /// High and centred, about a third of the way down: where a herald
+    /// stands. Dead centre is where the eye already is and where the
+    /// world's own business happens, so a card there covers the very
+    /// thing it is announcing; a third down clears the ground and reads
+    /// as a proclamation over the scene rather than a box in front of
+    /// it.
+    Herald,
 }
 
 impl Anchor {
@@ -67,6 +74,7 @@ impl Anchor {
             Anchor::Top => (margin, auto, auto, half),
             Anchor::Bottom => (auto, auto, margin, half),
             Anchor::Center => (half, auto, auto, half),
+            Anchor::Herald => (Val::Percent(30.0), auto, auto, half),
         }
     }
 
@@ -78,6 +86,7 @@ impl Anchor {
             Anchor::Left | Anchor::Right => Some(Val2::new(Val::Px(0.0), Val::Percent(-50.0))),
             Anchor::Top | Anchor::Bottom => Some(Val2::new(Val::Percent(-50.0), Val::Px(0.0))),
             Anchor::Center => Some(Val2::new(Val::Percent(-50.0), Val::Percent(-50.0))),
+            Anchor::Herald => Some(Val2::new(Val::Percent(-50.0), Val::Percent(-50.0))),
             _ => None,
         }
     }
@@ -88,7 +97,7 @@ impl Anchor {
         match self {
             Anchor::TopLeft | Anchor::BottomLeft | Anchor::Left => AlignItems::Start,
             Anchor::TopRight | Anchor::BottomRight | Anchor::Right => AlignItems::End,
-            Anchor::Top | Anchor::Bottom | Anchor::Center => AlignItems::Center,
+            Anchor::Top | Anchor::Bottom | Anchor::Center | Anchor::Herald => AlignItems::Center,
         }
     }
 }

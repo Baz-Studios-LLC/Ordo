@@ -75,6 +75,11 @@ pub struct FontFace {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Metric {
     TitleSize,
+    /// A herald's voice: the proclamation card's title, and nothing else.
+    /// Every other heading in an interface labels something the eye is
+    /// already looking at; this one has to carry a room, so it is a size
+    /// of its own rather than a multiple of the ordinary title.
+    HeraldSize,
     BodySize,
     SmallSize,
     /// Inner padding of a panel.
@@ -159,6 +164,7 @@ impl Default for Theme {
             ]),
             metrics: HashMap::from([
                 (TitleSize, 15.0),
+                (HeraldSize, 38.0),
                 (BodySize, 13.0),
                 (SmallSize, 12.0),
                 (Pad, 12.0),
@@ -448,6 +454,7 @@ table!(
 table!(
     MetricTable, Metric, f32,
     title_size => TitleSize,
+    herald_size => HeraldSize,
     body_size => BodySize,
     small_size => SmallSize,
     pad => Pad,

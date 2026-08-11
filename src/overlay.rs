@@ -596,11 +596,20 @@ pub(crate) struct Confetti {
     life: f32,
 }
 
-/// Centre stage, above the furniture with the toasts.
+/// The herald's stage: high and centred, above the furniture with the
+/// toasts.
+///
+/// It stood dead centre once, which is the one place a great day should
+/// NOT be announced - the eye is already there, the world's own business
+/// happens there, and a card in the middle covers the very birth or
+/// building it came to announce. A third of the way down it reads as a
+/// proclamation over the scene. Brett: "I want to move the centered
+/// alerts to the top third of the screen. Make them bigger and seem
+/// more epic."
 pub fn proclamation_stage() -> impl Bundle {
     (
         ProclamationStage,
-        Anchored(Anchor::Center),
+        Anchored(Anchor::Herald),
         Layer::Toast,
         Node {
             flex_direction: FlexDirection::Column,
@@ -645,9 +654,12 @@ pub(crate) fn stage_proclamations(
         .spawn((
             Proclaimed {
                 age: 0.0,
-                rise: 0.35,
-                hold: 2.8,
-                fall: 0.7,
+                // Slower in and slower out, and held long enough to be
+                // looked UP at. A great day that is gone in three
+                // seconds was an interruption, not an occasion.
+                rise: 0.55,
+                hold: 4.2,
+                fall: 1.1,
                 ink: color,
             },
             Interaction::default(),
@@ -655,9 +667,12 @@ pub(crate) fn stage_proclamations(
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 row_gap: theme.px(Metric::Gap),
-                padding: UiRect::axes(Val::Px(26.0), Val::Px(16.0)),
-                border: UiRect::all(Val::Px(2.0)),
-                border_radius: BorderRadius::all(Val::Px(10.0)),
+                // Room around the words. A proclamation is mostly air:
+                // the space is what makes it read as ceremony rather
+                // than as another notice that happens to be centred.
+                padding: UiRect::axes(Val::Px(52.0), Val::Px(30.0)),
+                border: UiRect::all(Val::Px(3.0)),
+                border_radius: BorderRadius::all(Val::Px(14.0)),
                 ..default()
             },
             BackgroundColor(theme.color(Role::PanelBg)),
@@ -670,17 +685,23 @@ pub(crate) fn stage_proclamations(
         commands.entity(card).insert(ProclaimedToken(token));
     }
     let title_entity = commands.spawn(heading(&title)).id();
-    commands
-        .entity(title_entity)
-        .insert((TextColor(color), ChildOf(card)));
+    commands.entity(title_entity).insert((
+        TextColor(color),
+        // A herald's size, not a label's. Set as a METRIC rather than a
+        // font: `TextSize` is re-applied from the theme every time it
+        // moves, so a raw TextFont here would be quietly overwritten -
+        // which is exactly what happened the first time.
+        TextSize(Metric::HeraldSize),
+        ChildOf(card),
+    ));
     let line_entity = commands.spawn(dim(&line)).id();
     commands.entity(line_entity).insert(ChildOf(card));
 
     // The confetti: a dozen flecks of the card's own colour, thrown from
     // the top corners, falling under interface gravity.
-    for i in 0..14 {
+    for i in 0..30 {
         let side = if i % 2 == 0 { -1.0 } else { 1.0 };
-        let throw = 30.0 + (i as f32 * 7.3) % 60.0;
+        let throw = 40.0 + (i as f32 * 7.3) % 110.0;
         commands.spawn((
             Confetti {
                 velocity: Vec2::new(side * throw, -90.0 - (i as f32 * 11.0) % 70.0),
