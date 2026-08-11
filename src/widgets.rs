@@ -9,6 +9,7 @@
 //! passes in [`crate::theme`] fill in the colour and the spacing, which is why
 //! a running game answers an edit to the theme file.
 
+use crate::tabs::Selected;
 use crate::theme::{
     Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Role, TextSize, Theme, tinted,
 };
@@ -343,15 +344,22 @@ pub(crate) fn paint_buttons(
         Entity,
         (
             With<OrdoButton>,
-            Or<(Changed<Hovered>, Added<Pressed>, Changed<Opacity>)>,
+            Or<(
+                Changed<Hovered>,
+                Added<Pressed>,
+                Changed<Opacity>,
+                Added<Selected>,
+            )>,
         ),
     >,
     every: Query<Entity, With<OrdoButton>>,
     mut released: RemovedComponents<Pressed>,
+    mut deselected: RemovedComponents<Selected>,
     mut buttons: Query<
         (
             &Hovered,
             Has<Pressed>,
+            Has<Selected>,
             Option<&Opacity>,
             &mut BackgroundColor,
             &mut BorderColor,
@@ -360,23 +368,35 @@ pub(crate) fn paint_buttons(
     >,
 ) {
     // Drained first either way: leaving releases unread would have them turn up
-    // again next frame as a phantom repaint.
+    // again next frame as a phantom repaint. `Selected` needs the same treatment
+    // for the same reason — a tab closing is a *removed* component, which no
+    // filter can watch for, and without this the tab you just left keeps its
+    // pressed face while the one you opened takes one too.
     let just_released: Vec<Entity> = released.read().collect();
+    let just_closed: Vec<Entity> = deselected.read().collect();
     let candidates: Vec<Entity> = if theme.is_changed() {
         every.iter().collect()
     } else {
-        touched.iter().chain(just_released).collect()
+        touched
+            .iter()
+            .chain(just_released)
+            .chain(just_closed)
+            .collect()
     };
 
     for entity in candidates {
-        let Ok((hovered, pressed, opacity, mut background, mut border)) = buttons.get_mut(entity)
+        let Ok((hovered, pressed, selected, opacity, mut background, mut border)) =
+            buttons.get_mut(entity)
         else {
             continue;
         };
-        let (fill, edge) = match (pressed, hovered.get()) {
-            (true, _) => (Role::ButtonPressed, Role::Accent),
-            (false, true) => (Role::ButtonHover, Role::Accent),
-            (false, false) => (Role::ButtonIdle, Role::PanelBorder),
+        // Pressed beats open beats hovered. An open tab still lights under the
+        // pointer, or the thing you are already looking at stops answering you.
+        let (fill, edge) = match (pressed, hovered.get(), crate::tabs::is_selected(selected)) {
+            (true, _, _) => (Role::ButtonPressed, Role::Accent),
+            (false, true, _) => (Role::ButtonHover, Role::Accent),
+            (false, false, Some(open)) => open,
+            (false, false, None) => (Role::ButtonIdle, Role::PanelBorder),
         };
         *background = BackgroundColor(tinted(&theme, fill, opacity));
         *border = BorderColor::all(tinted(&theme, edge, opacity));

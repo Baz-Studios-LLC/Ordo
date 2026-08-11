@@ -151,6 +151,44 @@ fn count<C: Component>(app: &mut App) -> usize {
     query.iter(app.world()).count()
 }
 
+/// Tabs, end to end: the open one is marked, its pane is the only one showing, and both
+/// swap when the selection moves.
+///
+/// The swap is the half worth testing. Closing a tab *removes* a component, which no change
+/// filter can see, so a naive painter leaves the tab you left still wearing the pressed face
+/// while the one you opened takes one too — two open tabs, which is not a state that exists.
+#[test]
+fn opening_a_tab_shows_its_pane_and_closes_the_last_one() {
+    let mut app = App::new();
+    app.add_plugins(MinimalPlugins)
+        .add_plugins(AssetPlugin::default())
+        .add_plugins(OrdoPlugin::new());
+
+    let strip = app.world_mut().spawn(tab_strip()).id();
+    let video = app.world_mut().spawn((tab("Video", 0), ChildOf(strip))).id();
+    let audio = app.world_mut().spawn((tab("Audio", 1), ChildOf(strip))).id();
+    let video_pane = app.world_mut().spawn(pane(strip, 0)).id();
+    let audio_pane = app.world_mut().spawn(pane(strip, 1)).id();
+    app.update();
+
+    let open = |app: &App, e: Entity| app.world().entity(e).contains::<Selected>();
+    let shown = |app: &App, e: Entity| {
+        *app.world().entity(e).get::<Visibility>().expect("a pane keeps its Visibility")
+            != Visibility::Hidden
+    };
+
+    assert!(open(&app, video), "a strip should open on its first tab");
+    assert!(!open(&app, audio));
+    assert!(shown(&app, video_pane) && !shown(&app, audio_pane));
+
+    app.world_mut().get_mut::<Tabs>(strip).unwrap().selected = 1;
+    app.update();
+
+    assert!(!open(&app, video), "the tab left behind is still marked open");
+    assert!(open(&app, audio));
+    assert!(shown(&app, audio_pane) && !shown(&app, video_pane));
+}
+
 /// A button's chrome is the one colour painted outside the repaint pass, because
 /// it depends on what the pointer is doing. That makes it the one colour that
 /// can forget [`Opacity`] — and it did, so a game fading a menu out faded the

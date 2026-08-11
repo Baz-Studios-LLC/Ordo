@@ -34,6 +34,7 @@ pub mod book;
 pub mod overlay;
 pub mod placard;
 pub mod radial;
+pub mod tabs;
 pub mod theme;
 pub mod widgets;
 pub mod window;
@@ -63,6 +64,7 @@ pub mod prelude {
     pub use crate::overlay::{Layer, Lifetime, Notice, Notices, Tooltip, shelf, toast_shelf};
     pub use crate::placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
     pub use crate::radial::{Radial, RadialArt, Spent, Wedge, radial, wedge};
+    pub use crate::tabs::{Pane, Selected, Tab, Tabs, pane, tab, tab_strip};
     pub use crate::theme::{
         Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Ramps, Role, TextSize, Theme,
     };
@@ -181,11 +183,15 @@ impl Plugin for OrdoPlugin {
                     radial::place_wedges,
                     radial::paint_wedges,
                     radial::aim_highlight,
+                    // Before the button paint, which reads the `Selected` this puts on.
+                    tabs::space_strips,
+                    tabs::show_selected_pane,
                 )
                     .chain()
                     .in_set(OrdoSet)
-                    .after(widgets::paint_buttons),
-            );
+                    .before(widgets::paint_buttons),
+            )
+            .add_observer(tabs::open_tab);
 
         if let Some(path) = &self.theme_path {
             let handle = app.world().resource::<AssetServer>().load(path.clone());
