@@ -61,3 +61,9 @@ row_height  = 22.0
 
 border      = 1.0
 radius      = 5.0
+
+# A radial menu: how far its wedges sit from the hub, and the still centre where
+# nothing is chosen yet. Both are feel rather than layout, so they are exactly the
+# kind of number worth costing a save instead of a rebuild.
+radial_radius    = 84.0
+radial_dead_zone = 26.0

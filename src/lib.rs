@@ -33,6 +33,7 @@
 pub mod book;
 pub mod overlay;
 pub mod placard;
+pub mod radial;
 pub mod theme;
 pub mod widgets;
 pub mod window;
@@ -61,6 +62,7 @@ pub mod prelude {
     pub use crate::OrdoPlugin;
     pub use crate::overlay::{Layer, Lifetime, Notice, Notices, Tooltip, shelf, toast_shelf};
     pub use crate::placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
+    pub use crate::radial::{Radial, Spent, Wedge, radial, wedge};
     pub use crate::theme::{
         Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Ramps, Role, TextSize, Theme,
     };
@@ -156,6 +158,17 @@ impl Plugin for OrdoPlugin {
                 )
                     .chain()
                     .in_set(OrdoSet),
+            )
+            // Registered separately because the tuple above is exactly at Bevy's
+            // twenty-system ceiling. Placed before painted, for the same reason
+            // chrome is dressed before paint: otherwise a wedge spawned this frame
+            // spends it at the origin in the wrong colour.
+            .add_systems(
+                Update,
+                (radial::place_wedges, radial::paint_wedges)
+                    .chain()
+                    .in_set(OrdoSet)
+                    .after(widgets::paint_buttons),
             );
 
         if let Some(path) = &self.theme_path {

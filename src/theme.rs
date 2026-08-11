@@ -94,6 +94,11 @@ pub enum Metric {
     RowHeight,
     Border,
     Radius,
+    /// Distance from a radial menu's hub to its wedges.
+    RadialRadius,
+    /// Radius around a radial hub inside which nothing is selected yet, so
+    /// opening a menu does not commit to whichever way the hand drifted.
+    RadialDeadZone,
 }
 
 /// The resolved theme. Systems read this; nothing writes it but
@@ -174,6 +179,8 @@ impl Default for Theme {
                 (RowHeight, 22.0),
                 (Border, 1.0),
                 (Radius, 5.0),
+                (RadialRadius, 84.0),
+                (RadialDeadZone, 26.0),
             ]),
             // Empty on purpose. Ordo ships no typeface for the same reason it
             // ships no palette.
@@ -464,6 +471,8 @@ table!(
     row_height => RowHeight,
     border => Border,
     radius => Radius,
+    radial_radius => RadialRadius,
+    radial_dead_zone => RadialDeadZone,
 );
 
 /// Keeps the loaded theme file alive and findable.
@@ -758,6 +767,8 @@ mod tests {
             Metric::RowHeight,
             Metric::Border,
             Metric::Radius,
+            Metric::RadialRadius,
+            Metric::RadialDeadZone,
         ] {
             assert!(
                 theme.metrics.contains_key(&metric),

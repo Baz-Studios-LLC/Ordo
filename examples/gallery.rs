@@ -137,6 +137,20 @@ fn build(mut commands: Commands) {
     // Bottom right is left clear for the toast shelf — a corner cannot hold a
     // panel and a stack of notices at once without them landing on each other.
     commands.spawn(toast_shelf(Anchor::BottomRight));
+
+    // A radial menu, parked open mid-screen with one wedge chosen and one spent,
+    // so the three wedge states are all visible at once. A live one is driven by
+    // whatever gesture the game uses; here it just sits there being looked at.
+    commands.spawn((
+        radial(Vec2::new(640.0, 300.0), 4),
+        Radial { count: 4, selected: Some(1) },
+        children![
+            wedge(0, "Worker"),
+            wedge(1, "Queen"),
+            (wedge(2, "Food"), Spent),
+            wedge(3, "Water"),
+        ],
+    ));
 }
 
 /// A colour chip. Built here rather than in the kit, which shows the other way

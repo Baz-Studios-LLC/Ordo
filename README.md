@@ -144,6 +144,11 @@ are two live games.
 theme file, `panel` / `card` / `backdrop`, `row` / `label`, `button`, text
 roles, `Layer`, `Opacity` / `Lifetime`, toasts, tooltips.
 
+**In, one game so far:** `radial` / `wedge` — a menu around the point you
+pressed, written for Please Don't Shake's ant farm. Ordo owns where the wedges
+sit and which one an offset points at; the gesture that opens it stays with the
+game, because a hold, a modifier and a bound key are not a kit's business.
+
 **Next, proven in Divus Factus:** `window` (drag, z-order focus, close,
 scroll), `bar` / gauge, a real tween beyond `Lifetime`, and a **binding** —
 the shared prerequisite for sliders, checkboxes and any data-driven layout.
