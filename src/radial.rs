@@ -167,10 +167,13 @@ pub(crate) fn place_wedges(
 /// Paint every wedge from the hub's selection.
 ///
 /// Sole writer of a wedge's `TextColor`, which is why `wedge` ships no `Ink`.
+/// The trigger still watches `Changed<Radial>` even though the label no longer depends on
+/// the selection. `Spent` is added and removed as a game's stock moves, and a removal is
+/// not a change any filter can see — the hub changing on every open and every aim is the
+/// cheap catch-all that keeps a refilled wedge from staying grey.
 pub(crate) fn paint_wedges(
     theme: Res<Theme>,
-    hubs: Query<&Radial>,
-    wedges: Query<(&Wedge, &ChildOf, Has<Spent>, &Children)>,
+    wedges: Query<(Has<Spent>, &Children), With<Wedge>>,
     mut inks: Query<&mut TextColor>,
     changed: Query<(), Or<(Changed<Radial>, Added<Wedge>)>>,
 ) {
@@ -178,15 +181,17 @@ pub(crate) fn paint_wedges(
         return;
     }
 
-    for (Wedge(index), parent, spent, children) in &wedges {
-        let Ok(hub) = hubs.get(parent.parent()) else {
-            continue;
-        };
+    for (spent, children) in &wedges {
+        // Selection is the rim's job, not the label's. The label only has to stay
+        // readable, so it doesn't take the accent when aimed at.
+        //
+        // It used to. That works while a game's accent happens to be bright and fails the
+        // moment one isn't: a darker accent turns the *aimed-at* label into the hardest one
+        // on the wheel to read, which is precisely backwards. A kit cannot know how light
+        // a game's accent will be, so it must not depend on it for legibility.
         let role = if spent {
             // Found second, but still found — the wedge is meant to be legible.
             Role::InkDim
-        } else if hub.selected == Some(*index) {
-            Role::Accent
         } else {
             Role::Ink
         };
