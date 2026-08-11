@@ -284,7 +284,13 @@ impl Default for Opacity {
     }
 }
 
-fn tinted(theme: &Theme, role: Role, opacity: Option<&Opacity>) -> Color {
+/// A role's colour, scaled by whatever [`Opacity`] the node carries.
+///
+/// Shared with `widgets::paint_buttons`, which is the only painter outside
+/// [`repaint`] — a button's colour depends on the pointer, which the repaint
+/// pass knows nothing about. Both go through here so neither can forget the
+/// opacity and leave half a widget unfaded.
+pub(crate) fn tinted(theme: &Theme, role: Role, opacity: Option<&Opacity>) -> Color {
     let color = theme.color(role);
     match opacity {
         Some(Opacity(scale)) => color.with_alpha(color.alpha() * scale),

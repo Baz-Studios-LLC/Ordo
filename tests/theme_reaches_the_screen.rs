@@ -150,3 +150,50 @@ fn count<C: Component>(app: &mut App) -> usize {
     let mut query = app.world_mut().query_filtered::<Entity, With<C>>();
     query.iter(app.world()).count()
 }
+
+/// A button's chrome is the one colour painted outside the repaint pass, because
+/// it depends on what the pointer is doing. That makes it the one colour that
+/// can forget [`Opacity`] — and it did, so a game fading a menu out faded the
+/// labels and left the boxes behind them at full strength.
+///
+/// Worth an integration test rather than a unit one: the bug was as much about
+/// *when* `paint_buttons` runs as what it writes. It repaints only buttons the
+/// pointer has touched, so a changed opacity that isn't in its trigger produces
+/// a button that fades the moment you wave the mouse at it and not before.
+#[test]
+fn a_faded_button_fades_its_chrome_and_not_only_its_label() {
+    let mut app = App::new();
+    app.add_plugins(MinimalPlugins)
+        .add_plugins(AssetPlugin::default())
+        .add_plugins(OrdoPlugin::new());
+
+    let button = app.world_mut().spawn(button("Continue")).id();
+    app.update();
+
+    let opaque = app
+        .world()
+        .entity(button)
+        .get::<BackgroundColor>()
+        .expect("the button kept its BackgroundColor")
+        .0
+        .alpha();
+    assert!(opaque > 0.0, "an untouched button should still get painted");
+
+    // Half faded, and the pointer never goes near it.
+    app.world_mut().entity_mut(button).insert(Opacity(0.5));
+    app.update();
+
+    let faded = app.world().entity(button).get::<BackgroundColor>().unwrap().0.alpha();
+    assert!(
+        (faded - opaque * 0.5).abs() < 0.001,
+        "the fill should be scaled to {} but is {faded}",
+        opaque * 0.5,
+    );
+
+    let edge = app.world().entity(button).get::<BorderColor>().unwrap();
+    assert!(
+        edge.top.alpha() < 1.0,
+        "the border should have faded with the fill, and is at {}",
+        edge.top.alpha(),
+    );
+}

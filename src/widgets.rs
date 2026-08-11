@@ -9,7 +9,9 @@
 //! passes in [`crate::theme`] fill in the colour and the spacing, which is why
 //! a running game answers an edit to the theme file.
 
-use crate::theme::{Edge, Face, Fill, FontRole, Ink, Metric, Role, TextSize, Theme};
+use crate::theme::{
+    Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Role, TextSize, Theme, tinted,
+};
 use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
 use bevy::ui::Pressed;
@@ -327,15 +329,30 @@ pub fn button(content: &str) -> impl Bundle {
 /// A *removed* component is not a change any filter can watch for, so releases
 /// have to be collected separately or every clicked button stays lit. When the
 /// theme itself moves, every button repaints rather than only the touched one.
+///
+/// A button's chrome is painted here rather than through `Fill` and `Edge`,
+/// because its colour depends on what the pointer is doing and the repaint pass
+/// knows nothing about that. That makes this the one place a colour is set
+/// outside `theme::repaint`, so it carries the same obligation: honour
+/// [`Opacity`]. Without it a fading menu fades its labels and leaves the boxes
+/// behind them at full strength — and worse, only until the pointer moves,
+/// since a button that isn't touched isn't repainted at all.
 pub(crate) fn paint_buttons(
     theme: Res<Theme>,
-    touched: Query<Entity, (With<OrdoButton>, Or<(Changed<Hovered>, Added<Pressed>)>)>,
+    touched: Query<
+        Entity,
+        (
+            With<OrdoButton>,
+            Or<(Changed<Hovered>, Added<Pressed>, Changed<Opacity>)>,
+        ),
+    >,
     every: Query<Entity, With<OrdoButton>>,
     mut released: RemovedComponents<Pressed>,
     mut buttons: Query<
         (
             &Hovered,
             Has<Pressed>,
+            Option<&Opacity>,
             &mut BackgroundColor,
             &mut BorderColor,
         ),
@@ -352,7 +369,8 @@ pub(crate) fn paint_buttons(
     };
 
     for entity in candidates {
-        let Ok((hovered, pressed, mut background, mut border)) = buttons.get_mut(entity) else {
+        let Ok((hovered, pressed, opacity, mut background, mut border)) = buttons.get_mut(entity)
+        else {
             continue;
         };
         let (fill, edge) = match (pressed, hovered.get()) {
@@ -360,7 +378,7 @@ pub(crate) fn paint_buttons(
             (false, true) => (Role::ButtonHover, Role::Accent),
             (false, false) => (Role::ButtonIdle, Role::PanelBorder),
         };
-        *background = BackgroundColor(theme.color(fill));
-        *border = BorderColor::all(theme.color(edge));
+        *background = BackgroundColor(tinted(&theme, fill, opacity));
+        *border = BorderColor::all(tinted(&theme, edge, opacity));
     }
 }
