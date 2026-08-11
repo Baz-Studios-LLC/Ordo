@@ -276,22 +276,37 @@ const RING_INNER: f32 = 0.34;
 /// opaque the role it borrows happens to be — a menu that hid what you were pointing at
 /// would be working against itself.
 const RING_ALPHA: f32 = 0.62;
-const HIGHLIGHT_ALPHA: f32 = 0.80;
+const HIGHLIGHT_ALPHA: f32 = 1.0;
 /// Gap between slices, as a fraction of one slice.
 const SLICE_GAP: f32 = 0.03;
+/// Thickness of the highlight rim, as a fraction of the outer radius.
+const RIM_THICKNESS: f32 = 0.11;
 
 /// The label box, as a multiple of the radius and of the body text size.
 const LABEL_BOX_W: f32 = 1.05;
 const LABEL_BOX_H: f32 = 2.0;
 /// How much the pointed-at slice grows. Small on purpose: enough to feel like the wheel
 /// answered, not enough to move the label out from under the cursor.
-const HIGHLIGHT_GROW: f32 = 1.07;
+const HIGHLIGHT_GROW: f32 = 1.04;
 
-/// One alpha mask: a ring cut into `count` slices, or a single slice pointing up.
+/// Which piece of the wheel a mask draws.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Part {
+    /// The whole band, cut into every slice — the wheel itself.
+    Ring,
+    /// A thin arc along the outer edge of one slice, pointing up.
+    ///
+    /// The highlight used to be the whole filled slice, which buried its own label: at
+    /// any alpha strong enough to read as "this one", the text underneath was gone. A rim
+    /// says the same thing at the edge of the slice, where there is nothing to cover.
+    Rim,
+}
+
+/// One alpha mask, for either piece.
 ///
 /// Bucketed with the same measured-from-up, clockwise convention as [`Radial::pick`], so
 /// the slice that lights up is always the one being pointed at.
-fn ring_mask(count: usize, only_first: bool) -> Image {
+fn ring_mask(count: usize, part: Part) -> Image {
     let n = count.max(1) as f32;
     let step = core::f32::consts::TAU / n;
     let half = ART_SIZE as f32 * 0.5;
@@ -308,8 +323,13 @@ fn ring_mask(count: usize, only_first: bool) -> Image {
 
             // Feathered edges — a hard-edged circle at this size reads as a jaggy polygon.
             let edge = 1.5;
+            // The rim occupies only the outermost sliver of the band.
+            let band_inner = match part {
+                Part::Ring => inner,
+                Part::Rim => outer - half * RIM_THICKNESS,
+            };
             let mut alpha =
-                ((outer - r) / edge).clamp(0.0, 1.0) * ((r - inner) / edge).clamp(0.0, 1.0);
+                ((outer - r) / edge).clamp(0.0, 1.0) * ((r - band_inner) / edge).clamp(0.0, 1.0);
 
             if alpha > 0.0 {
                 let slot = (dy.atan2(dx) + core::f32::consts::FRAC_PI_2) / step;
@@ -317,7 +337,7 @@ fn ring_mask(count: usize, only_first: bool) -> Image {
                 // Distance from this slice's centre line, as a fraction of a slice.
                 if (slot - slot.round()).abs() > 0.5 - SLICE_GAP {
                     alpha = 0.0;
-                } else if only_first && index != 0.0 {
+                } else if part == Part::Rim && index != 0.0 {
                     alpha = 0.0;
                 }
             }
@@ -352,12 +372,12 @@ pub(crate) fn dress_radials(
         let ring = art
             .rings
             .entry(count)
-            .or_insert_with(|| images.add(ring_mask(count, false)))
+            .or_insert_with(|| images.add(ring_mask(count, Part::Ring)))
             .clone();
         let slice = art
             .slices
             .entry(count)
-            .or_insert_with(|| images.add(ring_mask(count, true)))
+            .or_insert_with(|| images.add(ring_mask(count, Part::Rim)))
             .clone();
 
         let radius = theme.metric(Metric::RadialRadius);
