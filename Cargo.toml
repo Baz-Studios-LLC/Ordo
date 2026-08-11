@@ -18,6 +18,12 @@ bevy = { version = "0.19.0", default-features = false, features = [
     "bevy_picking",
     "ui_picking",
 ] }
+# Named directly only so the radial menu can generate its own wheel art: constructing
+# an `Image` needs `Extent3d` and `TextureFormat`, and bevy_image imports those from here
+# without re-exporting them. Already in the tree via bevy_ui, so this costs nothing to
+# build — it just makes the dependency honest rather than reaching for bevy_render, which
+# Ordo deliberately does not take.
+wgpu-types = "29"
 serde = { version = "1", features = ["derive"] }
 toml = "0.9"
 

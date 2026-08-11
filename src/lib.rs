@@ -62,7 +62,7 @@ pub mod prelude {
     pub use crate::OrdoPlugin;
     pub use crate::overlay::{Layer, Lifetime, Notice, Notices, Tooltip, shelf, toast_shelf};
     pub use crate::placard::{Placard, PlacardParts, Rising, depth_scale, pin, placard};
-    pub use crate::radial::{Radial, Spent, Wedge, radial, wedge};
+    pub use crate::radial::{Radial, RadialArt, Spent, Wedge, radial, wedge};
     pub use crate::theme::{
         Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Ramps, Role, TextSize, Theme,
     };
@@ -70,6 +70,16 @@ pub mod prelude {
         Anchor, backdrop, body, button, card, dim, heading, label, panel, row,
     };
     pub use crate::window::{CloseButton, DragHandle, Titled, window};
+}
+
+/// Whether there is an image collection to add generated art to.
+///
+/// The radial menu draws its own wheel, which means writing to `Assets<Image>` — and a
+/// system that asks for a resource which does not exist is an error, not a no-op. Ordo's
+/// suite runs headless, where the asset plugins are absent, so this is asked rather than
+/// assumed. Same reasoning as [`the_pointer_exists`].
+fn the_images_exist(images: Option<Res<Assets<Image>>>) -> bool {
+    images.is_some()
 }
 
 /// Whether there is a mouse and a window to ask about.
@@ -120,6 +130,7 @@ impl Plugin for OrdoPlugin {
             .init_resource::<overlay::Proclamations>()
             .init_resource::<overlay::HoverClock>()
             .init_resource::<window::Dragging>()
+            .init_resource::<radial::RadialArt>()
             .add_systems(
                 Update,
                 (
@@ -165,7 +176,12 @@ impl Plugin for OrdoPlugin {
             // spends it at the origin in the wrong colour.
             .add_systems(
                 Update,
-                (radial::place_wedges, radial::paint_wedges)
+                (
+                    radial::dress_radials.run_if(the_images_exist),
+                    radial::place_wedges,
+                    radial::paint_wedges,
+                    radial::aim_highlight,
+                )
                     .chain()
                     .in_set(OrdoSet)
                     .after(widgets::paint_buttons),

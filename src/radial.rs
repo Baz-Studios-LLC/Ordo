@@ -21,7 +21,13 @@
 //! [`Ink`]: crate::theme::Ink
 
 use crate::theme::{Face, FontRole, Metric, Role, TextSize, Theme};
+use bevy::asset::RenderAssetUsages;
+use bevy::image::Image;
+use bevy::math::Rot2;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
+use bevy::ui::UiTransform;
+use wgpu_types::{Extent3d, TextureDimension, TextureFormat};
 
 /// The hub of a radial menu. Holds the state its wedges are painted from.
 #[derive(Component, Debug, Clone)]
@@ -215,5 +221,170 @@ mod tests {
     #[test]
     fn an_empty_hub_picks_nothing() {
         assert_eq!(Radial::new(0).pick(Vec2::new(0.0, -50.0), 10.0), None);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The wheel
+// ---------------------------------------------------------------------------
+
+/// Marks the ring drawn under a hub's wedges.
+#[derive(Component)]
+pub struct RadialDisc;
+
+/// Marks the single slice that lights up under the chosen wedge.
+#[derive(Component)]
+pub struct RadialHighlight;
+
+/// Wheel art, generated once per wedge count and kept.
+///
+/// Drawn rather than shipped, for the same reason Ordo ships no palette: a menu with
+/// three wedges and one with six want different art, and shipping PNGs would either
+/// dictate the count or need a file per count. These are alpha masks, so the theme
+/// tints them and the wheel follows the palette like everything else.
+#[derive(Resource, Default)]
+pub struct RadialArt {
+    rings: HashMap<usize, Handle<Image>>,
+    slices: HashMap<usize, Handle<Image>>,
+}
+
+/// Resolution of the generated art. It is scaled to whatever the radius metric says, so
+/// this only decides how crisp the edges are.
+const ART_SIZE: u32 = 256;
+/// The ring straddles the wedge radius, so labels sit on it rather than beside it.
+const RING_OUTER: f32 = 1.34;
+const RING_INNER: f32 = 0.54;
+/// Gap between slices, as a fraction of one slice.
+const SLICE_GAP: f32 = 0.055;
+/// How much the pointed-at slice grows. Small on purpose: enough to feel like the wheel
+/// answered, not enough to move the label out from under the cursor.
+const HIGHLIGHT_GROW: f32 = 1.07;
+
+/// One alpha mask: a ring cut into `count` slices, or a single slice pointing up.
+///
+/// Bucketed with the same measured-from-up, clockwise convention as [`Radial::pick`], so
+/// the slice that lights up is always the one being pointed at.
+fn ring_mask(count: usize, only_first: bool) -> Image {
+    let n = count.max(1) as f32;
+    let step = core::f32::consts::TAU / n;
+    let half = ART_SIZE as f32 * 0.5;
+    let outer = half;
+    let inner = half * (RING_INNER / RING_OUTER);
+
+    let mut data = vec![0u8; (ART_SIZE * ART_SIZE * 4) as usize];
+
+    for py in 0..ART_SIZE {
+        for px in 0..ART_SIZE {
+            let dx = px as f32 + 0.5 - half;
+            let dy = py as f32 + 0.5 - half;
+            let r = (dx * dx + dy * dy).sqrt();
+
+            // Feathered edges — a hard-edged circle at this size reads as a jaggy polygon.
+            let edge = 1.5;
+            let mut alpha =
+                ((outer - r) / edge).clamp(0.0, 1.0) * ((r - inner) / edge).clamp(0.0, 1.0);
+
+            if alpha > 0.0 {
+                let slot = (dy.atan2(dx) + core::f32::consts::FRAC_PI_2) / step;
+                let index = slot.round().rem_euclid(n);
+                // Distance from this slice's centre line, as a fraction of a slice.
+                if (slot - slot.round()).abs() > 0.5 - SLICE_GAP {
+                    alpha = 0.0;
+                } else if only_first && index != 0.0 {
+                    alpha = 0.0;
+                }
+            }
+
+            let i = ((py * ART_SIZE + px) * 4) as usize;
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 255;
+            data[i + 3] = (alpha * 255.0) as u8;
+        }
+    }
+
+    Image::new(
+        Extent3d { width: ART_SIZE, height: ART_SIZE, depth_or_array_layers: 1 },
+        TextureDimension::D2,
+        data,
+        TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::RENDER_WORLD,
+    )
+}
+
+/// Give every fresh hub its ring and its highlight.
+pub(crate) fn dress_radials(
+    mut commands: Commands,
+    mut art: ResMut<RadialArt>,
+    mut images: ResMut<Assets<Image>>,
+    theme: Res<Theme>,
+    fresh: Query<(Entity, &Radial), Added<Radial>>,
+) {
+    for (hub, radial) in &fresh {
+        let count = radial.count.max(1);
+        let ring = art
+            .rings
+            .entry(count)
+            .or_insert_with(|| images.add(ring_mask(count, false)))
+            .clone();
+        let slice = art
+            .slices
+            .entry(count)
+            .or_insert_with(|| images.add(ring_mask(count, true)))
+            .clone();
+
+        let radius = theme.metric(Metric::RadialRadius);
+        let size = radius * RING_OUTER * 2.0;
+        let corner = -radius * RING_OUTER;
+
+        let plate = |image: Handle<Image>, tint: Color| {
+            (
+                ImageNode::new(image).with_color(tint),
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: px(corner),
+                    top: px(corner),
+                    width: px(size),
+                    height: px(size),
+                    ..default()
+                },
+                // Behind the labels: siblings otherwise draw in spawn order, and the art
+                // is attached after the game has already added its wedges.
+                ZIndex(-1),
+            )
+        };
+
+        commands.spawn((RadialDisc, plate(ring, theme.color(Role::CardBg)), ChildOf(hub)));
+        commands.spawn((
+            RadialHighlight,
+            plate(slice, theme.color(Role::Accent)),
+            Visibility::Hidden,
+            ChildOf(hub),
+        ));
+    }
+}
+
+/// Point the lit slice at whatever the hand is pointing at, and grow it a little so the
+/// wheel visibly answers.
+pub(crate) fn aim_highlight(
+    hubs: Query<&Radial>,
+    mut highlights: Query<(&ChildOf, &mut UiTransform, &mut Visibility), With<RadialHighlight>>,
+) {
+    for (parent, mut transform, mut visibility) in &mut highlights {
+        let Ok(hub) = hubs.get(parent.parent()) else {
+            continue;
+        };
+        match hub.selected {
+            Some(index) => {
+                let step = core::f32::consts::TAU / hub.count.max(1) as f32;
+                // The mask points up and UiTransform rotates clockwise — the same
+                // direction the wedges are numbered in.
+                transform.rotation = Rot2::radians(index as f32 * step);
+                // Scaled about the hub, so the slice grows outward from the centre.
+                transform.scale = Vec2::splat(HIGHLIGHT_GROW);
+                *visibility = Visibility::Inherited;
+            }
+            None => *visibility = Visibility::Hidden,
+        }
     }
 }

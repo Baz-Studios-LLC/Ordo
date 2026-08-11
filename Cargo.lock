@@ -4033,6 +4033,7 @@ dependencies = [
  "bevy",
  "serde",
  "toml",
+ "wgpu-types",
 ]
 
 [[package]]
