@@ -192,6 +192,10 @@ impl Plugin for OrdoPlugin {
                 )
                     .chain()
                     .in_set(OrdoSet)
+                    // Between the two, and both edges matter: `relayout` sets the padding a
+                    // stepper's arrows then trim, and `paint_buttons` reads the `Selected` a
+                    // tab puts on.
+                    .after(widgets::relayout)
                     .before(widgets::paint_buttons),
             )
             .add_observer(tabs::open_tab);

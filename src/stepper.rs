@@ -33,6 +33,10 @@ pub struct StepperParts {
 #[derive(Component)]
 pub struct StepperValue;
 
+/// Marks a stepper's nudges, so they can be trimmed down to arrows.
+#[derive(Component)]
+pub struct StepperArrow;
+
 /// `<  value  >`, laid out so the arrows don't move when the value's length changes.
 pub fn stepper(commands: &mut Commands, parent: Entity, value: &str) -> StepperParts {
     let root = commands
@@ -46,7 +50,9 @@ pub fn stepper(commands: &mut Commands, parent: Entity, value: &str) -> StepperP
         ))
         .id();
 
-    let down = commands.spawn((button("<"), ChildOf(root))).id();
+    let down = commands
+        .spawn((button("<"), StepperArrow, ChildOf(root)))
+        .id();
     let value_entity = commands
         .spawn((
             StepperValue,
@@ -59,26 +65,40 @@ pub fn stepper(commands: &mut Commands, parent: Entity, value: &str) -> StepperP
             children![body(value)],
         ))
         .id();
-    let up = commands.spawn((button(">"), ChildOf(root))).id();
+    let up = commands.spawn((button(">"), StepperArrow, ChildOf(root))).id();
 
     StepperParts { root, down, value: value_entity, up }
 }
 
-/// Sizes a stepper's value box from the theme.
+/// Sizes a stepper's value box and trims its arrows.
 ///
-/// [`Metric::LabelWidth`] rather than a metric of its own: a stepper's value and a row's
-/// label are the two columns of the same table, and a window where they disagree reads as
-/// two windows.
+/// The value takes [`Metric::LabelWidth`] rather than a metric of its own: a stepper's value
+/// and a row's label are the two columns of the same table, and a window where they disagree
+/// reads as two windows.
+///
+/// The arrows get a *tighter* padding than a button's, and that is the difference between a
+/// stepper and three buttons in a row. A `<` inside full button padding comes out half again
+/// as tall as it is wide, and at that proportion the eye reads the arrows as the controls and
+/// the value as a caption between them — which is backwards.
+///
+/// Runs after Ordo's own relayout, which sets padding for everything `Padded`. Either order
+/// draws correctly on most frames and they disagree on the ones where the theme moves, which
+/// is the worst kind of bug to own.
 pub(crate) fn size_steppers(
     theme: Res<crate::theme::Theme>,
     mut values: Query<&mut Node, With<StepperValue>>,
-    fresh: Query<(), Added<StepperValue>>,
+    mut arrows: Query<&mut Node, (With<StepperArrow>, Without<StepperValue>)>,
+    fresh: Query<(), Or<(Added<StepperValue>, Added<StepperArrow>)>>,
 ) {
     if !theme.is_changed() && fresh.is_empty() {
         return;
     }
-    let width = theme.px(Metric::LabelWidth);
     for mut node in &mut values {
-        node.width = width;
+        node.width = theme.px(Metric::LabelWidth);
+    }
+
+    let pad = theme.metric(Metric::Pad);
+    for mut node in &mut arrows {
+        node.padding = UiRect::axes(px(pad * 0.7), px(pad * 0.25));
     }
 }
