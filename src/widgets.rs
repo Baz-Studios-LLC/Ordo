@@ -112,10 +112,24 @@ impl Anchor {
 pub(crate) fn relayout(
     theme: Res<Theme>,
     mut nodes: Query<
-        (&mut Node, Has<Padded>, Option<&Anchored>, Has<LabelColumn>),
+        (
+            &mut Node,
+            Has<Padded>,
+            Option<&Anchored>,
+            Has<LabelColumn>,
+            Has<Hanging>,
+        ),
         Or<(With<Padded>, With<Anchored>, With<LabelColumn>)>,
     >,
-    fresh: Query<(), Or<(Added<Padded>, Added<Anchored>, Added<LabelColumn>)>>,
+    fresh: Query<
+        (),
+        Or<(
+            Added<Padded>,
+            Added<Anchored>,
+            Added<LabelColumn>,
+            Added<Hanging>,
+        )>,
+    >,
 ) {
     if !theme.is_changed() && fresh.is_empty() {
         return;
@@ -128,13 +142,25 @@ pub(crate) fn relayout(
     let margin = theme.px(Metric::Margin);
     let label_width = theme.px(Metric::LabelWidth);
 
-    for (mut node, padded, anchored, label) in &mut nodes {
+    for (mut node, padded, anchored, label, hanging) in &mut nodes {
         if padded {
             node.padding = UiRect::all(pad);
             node.row_gap = gap;
             node.column_gap = gap;
             node.border = UiRect::all(border);
             node.border_radius = BorderRadius::all(radius);
+        }
+        // Undone AFTER the padding, not instead of it: a hanging panel is
+        // an ordinary panel with one edge given away to the screen.
+        if hanging {
+            node.padding.top = pad * 2.0;
+            node.border.top = px(0.0);
+            node.border_radius = BorderRadius {
+                top_left: px(0.0),
+                top_right: px(0.0),
+                bottom_left: radius,
+                bottom_right: radius,
+            };
         }
         if let Some(Anchored(anchor)) = anchored {
             let (top, right, bottom, left) = anchor.offsets(margin);
@@ -352,24 +378,35 @@ pub fn readout(wide: f32) -> impl Bundle {
     )
 }
 
-/// A rail of readouts that hangs from an edge of the screen.
+/// Marks a panel FIXED TO THE TOP EDGE rather than floating over the view.
 ///
-/// A panel with no top border, because it is not floating over the view -
-/// it is fixed to the top of it, and a line across the top of a thing
-/// already flush with the screen's edge reads as a seam.
+/// It is padded like any other panel, and then two things are undone: the
+/// border and the rounding across the top, because a line drawn along an
+/// edge the panel is already flush with reads as a seam; and the top
+/// padding is doubled, because a hanging panel is slid up past its own
+/// corners and the part of that padding above the screen is not padding at
+/// all - it is off-screen. Sixteen pixels of air with fourteen of it
+/// hidden leaves two, and the title sits on the edge it hangs from.
+///
+/// Its own component rather than the game reaching in, because
+/// [`relayout`] rewrites padding and border wholesale for everything
+/// `Padded` - so anything set from outside is overwritten on the next
+/// theme change, quietly and a frame later.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct Hanging;
+
+/// A rail of readouts that hangs from the top edge of the screen.
+///
+/// Slide it up past its own corner radius and it reads as a tab fixed to
+/// the edge; leave it where it lands and it is a box floating near one.
 pub fn hanging_rail() -> impl Bundle {
     (
         Panel,
         Padded,
+        Hanging,
         Node {
             flex_direction: FlexDirection::Column,
             align_items: AlignItems::Center,
-            border: UiRect {
-                left: px(1.0),
-                right: px(1.0),
-                bottom: px(1.0),
-                ..default()
-            },
             ..default()
         },
         BackgroundColor(Color::NONE),

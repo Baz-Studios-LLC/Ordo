@@ -56,7 +56,7 @@ pub use theme::{
     Sheen, TextSize, Theme, ThemeAsset, ThemeHandle,
 };
 pub use widgets::{
-    Anchor, Anchored, LabelColumn, OrdoButton, Padded, Panel, RowHeight, backdrop, body, button,
+    Anchor, Anchored, Hanging, LabelColumn, OrdoButton, Padded, Panel, RowHeight, backdrop, body, button,
     card, dim, hanging_rail, heading, label, panel, readout, row, rule, spring,
 };
 
