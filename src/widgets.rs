@@ -320,6 +320,65 @@ pub fn label(content: &str) -> impl Bundle {
     (LabelColumn, Node::default(), children![dim(content)])
 }
 
+/// A readout: one small boxed figure, for a rail of them.
+///
+/// The shape the bench's own tool bar wears - a hairline box, a dark well,
+/// one width for every cell in the rail. Brett, of that bar: "I like the
+/// way the toolbar looks in Op, can we do something like that?"
+///
+/// One width for all of them, not each sized to its contents: a row of
+/// figures that steps in and out as the eye runs along it reads as several
+/// unrelated things rather than as one instrument. `wide` is that width.
+///
+/// It is not a [`button`] - nothing here is pressed - so it takes no
+/// `Hovered` and no interaction, and its chrome is painted from the theme
+/// like any other panel rather than from what a pointer is doing.
+pub fn readout(wide: f32) -> impl Bundle {
+    (
+        Padded,
+        Node {
+            width: px(wide),
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            column_gap: px(6.0),
+            border: UiRect::all(px(1.0)),
+            ..default()
+        },
+        BackgroundColor(Color::NONE),
+        Fill(Role::CardBg),
+        BorderColor::all(Color::NONE),
+        Edge(Role::CardBorder),
+    )
+}
+
+/// A rail of readouts that hangs from an edge of the screen.
+///
+/// A panel with no top border, because it is not floating over the view -
+/// it is fixed to the top of it, and a line across the top of a thing
+/// already flush with the screen's edge reads as a seam.
+pub fn hanging_rail() -> impl Bundle {
+    (
+        Panel,
+        Padded,
+        Node {
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            border: UiRect {
+                left: px(1.0),
+                right: px(1.0),
+                bottom: px(1.0),
+                ..default()
+            },
+            ..default()
+        },
+        BackgroundColor(Color::NONE),
+        Fill(Role::PanelBg),
+        BorderColor::all(Color::NONE),
+        Edge(Role::PanelBorder),
+    )
+}
+
 // ---------------------------------------------------------------------------
 // Button
 // ---------------------------------------------------------------------------

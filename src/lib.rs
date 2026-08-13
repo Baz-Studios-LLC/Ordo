@@ -57,7 +57,7 @@ pub use theme::{
 };
 pub use widgets::{
     Anchor, Anchored, LabelColumn, OrdoButton, Padded, Panel, RowHeight, backdrop, body, button,
-    card, dim, heading, label, panel, row, rule, spring,
+    card, dim, hanging_rail, heading, label, panel, readout, row, rule, spring,
 };
 
 pub mod prelude {
