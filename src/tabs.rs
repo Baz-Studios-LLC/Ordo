@@ -241,7 +241,15 @@ pub(crate) fn shape_tabs(
 /// accent sits on the top of the open tab and nowhere else.
 pub(crate) fn paint_tabs(
     theme: Res<Theme>,
-    mut tabs: Query<(&Hovered, Has<Selected>, &mut BackgroundColor, &mut BorderColor), With<Tab>>,
+    mut tabs: Query<
+        (
+            &Hovered,
+            Has<Selected>,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
+        With<Tab>,
+    >,
 ) {
     let accent = theme.color(Role::Accent);
     let edge = theme.color(Role::PanelBorder);

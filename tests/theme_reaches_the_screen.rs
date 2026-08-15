@@ -165,8 +165,14 @@ fn opening_a_tab_shows_its_pane_and_closes_the_last_one() {
         .add_plugins(OrdoPlugin::new());
 
     let strip = app.world_mut().spawn(tab_strip()).id();
-    let video = app.world_mut().spawn((tab("Video", 0), ChildOf(strip))).id();
-    let audio = app.world_mut().spawn((tab("Audio", 1), ChildOf(strip))).id();
+    let video = app
+        .world_mut()
+        .spawn((tab("Video", 0), ChildOf(strip)))
+        .id();
+    let audio = app
+        .world_mut()
+        .spawn((tab("Audio", 1), ChildOf(strip)))
+        .id();
     let video_pane = app.world_mut().spawn(pane(strip, 0)).id();
     let audio_pane = app.world_mut().spawn(pane(strip, 1)).id();
     app.update();
@@ -175,7 +181,11 @@ fn opening_a_tab_shows_its_pane_and_closes_the_last_one() {
     // Display, not Visibility: a hidden pane that still holds its space leaves the open one
     // sitting in a column of gaps.
     let shown = |app: &App, e: Entity| {
-        app.world().entity(e).get::<Node>().expect("a pane keeps its Node").display
+        app.world()
+            .entity(e)
+            .get::<Node>()
+            .expect("a pane keeps its Node")
+            .display
             != Display::None
     };
 
@@ -186,7 +196,10 @@ fn opening_a_tab_shows_its_pane_and_closes_the_last_one() {
     app.world_mut().get_mut::<Tabs>(strip).unwrap().selected = 1;
     app.update();
 
-    assert!(!open(&app, video), "the tab left behind is still marked open");
+    assert!(
+        !open(&app, video),
+        "the tab left behind is still marked open"
+    );
     assert!(open(&app, audio));
     assert!(shown(&app, audio_pane) && !shown(&app, video_pane));
 }
@@ -223,7 +236,13 @@ fn a_faded_button_fades_its_chrome_and_not_only_its_label() {
     app.world_mut().entity_mut(button).insert(Opacity(0.5));
     app.update();
 
-    let faded = app.world().entity(button).get::<BackgroundColor>().unwrap().0.alpha();
+    let faded = app
+        .world()
+        .entity(button)
+        .get::<BackgroundColor>()
+        .unwrap()
+        .0
+        .alpha();
     assert!(
         (faded - opaque * 0.5).abs() < 0.001,
         "the fill should be scaled to {} but is {faded}",

@@ -207,6 +207,20 @@ pub fn panel(anchor: Anchor, min_width: Option<f32>) -> impl Bundle {
     )
 }
 
+/// Marks a compact, edge-anchored inspection surface. Games use this for
+/// people, buildings, and other live objects that deserve detail without
+/// replacing the world beneath them.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct InspectorPanel;
+
+/// A right-side panel for inspecting a living part of the game world.
+///
+/// The caller owns its final width and height; Ordo owns the anchored panel
+/// language so inspectors remain recognisable between games.
+pub fn inspector_panel(min_width: f32) -> impl Bundle {
+    (InspectorPanel, panel(Anchor::TopRight, Some(min_width)))
+}
+
 /// A full-screen dimmer to sit a modal on. Not `Padded`: a backdrop has no
 /// inside.
 pub fn backdrop() -> impl Bundle {

@@ -56,8 +56,9 @@ pub use theme::{
     Sheen, TextSize, Theme, ThemeAsset, ThemeHandle,
 };
 pub use widgets::{
-    Anchor, Anchored, Hanging, LabelColumn, OrdoButton, Padded, Panel, RowHeight, backdrop, body, button,
-    card, dim, hanging_rail, heading, label, panel, readout, row, rule, spring,
+    Anchor, Anchored, Hanging, InspectorPanel, LabelColumn, OrdoButton, Padded, Panel, RowHeight,
+    backdrop, body, button, card, dim, hanging_rail, heading, inspector_panel, label, panel,
+    readout, row, rule, spring,
 };
 
 pub mod prelude {
@@ -71,7 +72,8 @@ pub mod prelude {
         Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Ramps, Role, TextSize, Theme,
     };
     pub use crate::widgets::{
-        Anchor, backdrop, body, button, card, dim, heading, label, panel, row, rule, spring,
+        Anchor, InspectorPanel, backdrop, body, button, card, dim, heading, inspector_panel, label,
+        panel, row, rule, spring,
     };
     pub use crate::window::{CloseButton, DragHandle, Titled, window};
 }

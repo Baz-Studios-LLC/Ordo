@@ -42,7 +42,10 @@ pub struct Radial {
 
 impl Radial {
     pub fn new(count: usize) -> Self {
-        Self { count, selected: None }
+        Self {
+            count,
+            selected: None,
+        }
     }
 
     /// Which wedge an offset from the hub points at.
@@ -356,7 +359,11 @@ fn ring_mask(count: usize, part: Part) -> Image {
     }
 
     Image::new(
-        Extent3d { width: ART_SIZE, height: ART_SIZE, depth_or_array_layers: 1 },
+        Extent3d {
+            width: ART_SIZE,
+            height: ART_SIZE,
+            depth_or_array_layers: 1,
+        },
         TextureDimension::D2,
         data,
         TextureFormat::Rgba8UnormSrgb,

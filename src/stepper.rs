@@ -65,9 +65,16 @@ pub fn stepper(commands: &mut Commands, parent: Entity, value: &str) -> StepperP
             children![body(value)],
         ))
         .id();
-    let up = commands.spawn((button(">"), StepperArrow, ChildOf(root))).id();
+    let up = commands
+        .spawn((button(">"), StepperArrow, ChildOf(root)))
+        .id();
 
-    StepperParts { root, down, value: value_entity, up }
+    StepperParts {
+        root,
+        down,
+        value: value_entity,
+        up,
+    }
 }
 
 /// Sizes a stepper's value box and trims its arrows.

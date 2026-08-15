@@ -143,7 +143,10 @@ fn build(mut commands: Commands) {
     // whatever gesture the game uses; here it just sits there being looked at.
     commands.spawn((
         radial(Vec2::new(640.0, 300.0), 4),
-        Radial { count: 4, selected: Some(1) },
+        Radial {
+            count: 4,
+            selected: Some(1),
+        },
         children![
             wedge(0, "Worker"),
             wedge(1, "Queen"),
