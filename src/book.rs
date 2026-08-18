@@ -15,7 +15,7 @@ use bevy::prelude::*;
 use bevy::ui::BackgroundGradient;
 
 use crate::overlay::Layer;
-use crate::theme::{Edge, Face, Fill, FontRole, Metric, Role, Sheen, TextSize};
+use crate::theme::{Edge, Face, Fill, FontRole, Ink, Metric, Role, Sheen, TextSize};
 use crate::widgets::{Panel, dim, heading};
 
 /// The pieces of a book a caller wires into: the root (to show and hide),
@@ -28,6 +28,13 @@ pub struct BookParts {
     pub footer: Entity,
     pub title: Entity,
     pub subtitle: Entity,
+    /// The close mark in the top right corner.
+    ///
+    /// The kit draws it and puts it where every other window in the kit keeps
+    /// its own; what CLOSING MEANS stays the game's, so this comes back bare
+    /// for the game to hang its own component on. A book is not always a thing
+    /// to despawn - most games hide it, and some have a state to leave.
+    pub close: Entity,
 }
 
 /// A chapter button in the rail. The kit styles hover; the ACTIVE chapter
@@ -82,6 +89,32 @@ pub fn book(commands: &mut Commands, title: &str, subtitle: &str) -> BookParts {
         ))
         .id();
     adorn(commands, frame);
+
+    // The close, in the corner a window's close belongs in. A book without one
+    // is a book you have to know the key for - and beside windows that all
+    // carry an x at the top right, a button somewhere else reads as a
+    // different kind of thing entirely.
+    let close = commands
+        .spawn((
+            bevy::ui::widget::Button,
+            Interaction::default(),
+            Text::new("x"),
+            TextColor(Color::WHITE),
+            Ink(Role::InkDim),
+            Face(FontRole::Body),
+            TextSize(Metric::TitleSize),
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(8.0),
+                right: Val::Px(16.0),
+                ..default()
+            },
+            // Over the page, or the content scrolling under it would take the
+            // click meant for the corner.
+            GlobalZIndex(1),
+            ChildOf(frame),
+        ))
+        .id();
 
     // The rail: chapters down the left, under the book's own name.
     let rail = commands
@@ -180,6 +213,7 @@ pub fn book(commands: &mut Commands, title: &str, subtitle: &str) -> BookParts {
         footer,
         title: title_entity,
         subtitle: subtitle_entity,
+        close,
     }
 }
 
