@@ -11,11 +11,11 @@
 //! the game, because the gesture that summons it differs — a hold, a modifier,
 //! a bound key — and that is not a thing a kit should decide.
 //!
-//! Colour here is *state*, not theme, so it follows [`crate::widgets`]'s button
+//! Color here is *state*, not theme, so it follows [`crate::widgets`]'s button
 //! precedent: one pass writes `TextColor` directly from the theme's roles.
 //! Wedge labels therefore carry [`TextSize`] and [`Face`] — typography still
 //! answers the theme file — but deliberately **no [`Ink`]**, because `repaint`
-//! also writes `TextColor` and two writers over one colour is exactly how a
+//! also writes `TextColor` and two writers over one color is exactly how a
 //! highlight ends up flickering.
 //!
 //! [`Ink`]: crate::theme::Ink
@@ -106,12 +106,12 @@ pub fn radial(at: Vec2, count: usize) -> impl Bundle {
     )
 }
 
-/// One labelled wedge: a centred box holding a single line of text.
+/// One labelled wedge: a centered box holding a single line of text.
 ///
-/// A box rather than a bare text node, because a bare one has no width to centre on and
+/// A box rather than a bare text node, because a bare one has no width to center on and
 /// wraps at whatever the layout gives it — "Ant Kit 1" came out as three stacked lines
 /// spilling over the edge of its slice. The box is sized and placed by [`place_wedges`];
-/// colour comes from [`paint_wedges`].
+/// color comes from [`paint_wedges`].
 pub fn wedge(index: usize, content: &str) -> impl Bundle {
     (
         Wedge(index),
@@ -173,7 +173,7 @@ pub(crate) fn place_wedges(
 /// The trigger still watches `Changed<Radial>` even though the label no longer depends on
 /// the selection. `Spent` is added and removed as a game's stock moves, and a removal is
 /// not a change any filter can see — the hub changing on every open and every aim is the
-/// cheap catch-all that keeps a refilled wedge from staying grey.
+/// cheap catch-all that keeps a refilled wedge from staying gray.
 pub(crate) fn paint_wedges(
     theme: Res<Theme>,
     wedges: Query<(Has<Spent>, &Children), With<Wedge>>,
@@ -199,8 +199,8 @@ pub(crate) fn paint_wedges(
             Role::Ink
         };
         for &child in children {
-            if let Ok(mut colour) = inks.get_mut(child) {
-                colour.0 = theme.color(role);
+            if let Ok(mut color) = inks.get_mut(child) {
+                color.0 = theme.color(role);
             }
         }
     }
@@ -342,7 +342,7 @@ fn ring_mask(count: usize, part: Part) -> Image {
             if alpha > 0.0 {
                 let slot = (dy.atan2(dx) + core::f32::consts::FRAC_PI_2) / step;
                 let index = slot.round().rem_euclid(n);
-                // Distance from this slice's centre line, as a fraction of a slice.
+                // Distance from this slice's center line, as a fraction of a slice.
                 if (slot - slot.round()).abs() > 0.5 - SLICE_GAP {
                     alpha = 0.0;
                 } else if part == Part::Rim && index != 0.0 {
@@ -445,7 +445,7 @@ pub(crate) fn aim_highlight(
                 // The mask points up and UiTransform rotates clockwise — the same
                 // direction the wedges are numbered in.
                 transform.rotation = Rot2::radians(index as f32 * step);
-                // Scaled about the hub, so the slice grows outward from the centre.
+                // Scaled about the hub, so the slice grows outward from the center.
                 transform.scale = Vec2::splat(HIGHLIGHT_GROW);
                 *visibility = Visibility::Inherited;
             }

@@ -4,13 +4,13 @@
 //! villagers' heads, an occupancy call over a knocked house — and its
 //! speech bubbles were already a third, hand-rolled before the kit
 //! existed. The shape is always the same: project an entity's seat onto
-//! the screen, hold a card centred over that point growing upward, put it
+//! the screen, hold a card centered over that point growing upward, put it
 //! away when the thing walks off screen or out of reading range, and
 //! sometimes let it die of old age ([`crate::overlay::Lifetime`] already
 //! does the dying).
 //!
 //! The kit owns the PINNING and the card's chrome; the game owns the
-//! content. A game that wants its own border colour — Divus Factus dyes a
+//! content. A game that wants its own border color — Divus Factus dyes a
 //! nameplate's border by the wearer's faith — removes the [`Edge`] tag
 //! from the card and writes [`BorderColor`] itself; the repaint pass only
 //! ever touches what is tagged.
@@ -23,7 +23,7 @@ use crate::theme::{Edge, Fill, Role};
 /// Pins a UI node over a world entity.
 ///
 /// Lives on an absolute, zero-sized node — the projected point — whose
-/// children are centred on it and grow upward. [`placard`] builds exactly
+/// children are centered on it and grow upward. [`placard`] builds exactly
 /// that shape; this component only does the following-around.
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Placard {
@@ -100,7 +100,7 @@ pub fn placard(
 
 /// A bare pinned point with no card: for floating marks and one-glyph
 /// callouts that would drown in a panel. Content goes in as children,
-/// centred on the point and growing upward, exactly as a placard's card
+/// centered on the point and growing upward, exactly as a placard's card
 /// does — a placard IS a pin wearing one.
 pub fn pin(
     commands: &mut Commands,

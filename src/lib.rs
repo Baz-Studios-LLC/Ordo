@@ -10,13 +10,13 @@
 //! Two ideas carry the whole thing.
 //!
 //! **The game owns the palette.** Ordo names roles — [`Role::PanelBg`],
-//! [`Role::CardBorder`] — and the game says what colour those are. A kit that
+//! [`Role::CardBorder`] — and the game says what color those are. A kit that
 //! shipped its own palette would force a game like Divus Factus, whose panels
 //! are tinted from the same ramps its villagers' clothes are dyed from, to keep
-//! two sets of colours in step by hand forever.
+//! two sets of colors in step by hand forever.
 //!
 //! **Nothing is painted at spawn.** A widget carries tags saying which role and
-//! which metric it follows; a pass fills them in afterwards. That is what lets
+//! which metric it follows; a pass fills them in afterward. That is what lets
 //! the theme file be edited with the game running, which is the single largest
 //! difference between this and hand-rolling it again.
 //!
@@ -108,7 +108,7 @@ pub struct OrdoPlugin {
 
 impl OrdoPlugin {
     /// No theme file. [`Theme`] keeps its defaults, and the game is free to
-    /// write them itself — which is the right shape for a game whose colours
+    /// write them itself — which is the right shape for a game whose colors
     /// are computed rather than chosen.
     pub fn new() -> Self {
         Self::default()
@@ -179,7 +179,7 @@ impl Plugin for OrdoPlugin {
             // Registered separately because the tuple above is exactly at Bevy's
             // twenty-system ceiling. Placed before painted, for the same reason
             // chrome is dressed before paint: otherwise a wedge spawned this frame
-            // spends it at the origin in the wrong colour.
+            // spends it at the origin in the wrong color.
             .add_systems(
                 Update,
                 (
@@ -202,7 +202,7 @@ impl Plugin for OrdoPlugin {
                     .before(widgets::paint_buttons),
             )
             // After the button paint, which it overwrites for tabs: that pass writes one
-            // colour all the way round and a tab is the one widget that wants an edge of its
+            // color all the way round and a tab is the one widget that wants an edge of its
             // own.
             .add_systems(
                 Update,

@@ -7,7 +7,7 @@
 //! Two reasons it's here rather than in a game. It is the same three nodes every time, and
 //! getting it to *read* right is fiddly in a way that has nothing to do with any particular
 //! game: the value has to hold a fixed width or the arrows twitch inward every time a
-//! shorter word comes up, and it has to be centred in that width or the whole control
+//! shorter word comes up, and it has to be centered in that width or the whole control
 //! wobbles as the text changes.
 //!
 //! The arrows are `<` and `>`, plain ASCII, and that is deliberate. Bevy's embedded font

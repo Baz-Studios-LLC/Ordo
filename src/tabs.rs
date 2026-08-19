@@ -125,8 +125,8 @@ pub fn open_tab(
 
 /// Marks the open tab and shows its pane.
 ///
-/// `Selected` is a component rather than a colour written here, because the repaint pass owns
-/// colours — see [`crate::theme::repaint`]. Adding and removing it is what makes the button
+/// `Selected` is a component rather than a color written here, because the repaint pass owns
+/// colors — see [`crate::theme::repaint`]. Adding and removing it is what makes the button
 /// painter draw a tab as on, and it means a faded window fades its open tab correctly too.
 pub(crate) fn show_selected_pane(
     mut commands: Commands,
@@ -201,7 +201,7 @@ const BAR_WEIGHT: f32 = 3.0;
 ///
 /// Without this a tab is a button, and reads as one however it is coloured. A tab is a card
 /// with one side missing — the side it shares with the pane below it — and the shape is what
-/// says so before any colour does.
+/// says so before any color does.
 pub(crate) fn shape_tabs(
     theme: Res<Theme>,
     mut tabs: Query<&mut Node, With<Tab>>,
@@ -236,8 +236,8 @@ pub(crate) fn shape_tabs(
 /// Paints a tab's chrome, per edge.
 ///
 /// Runs *after* `paint_buttons`, and overwrites it for tabs. That pass has to write
-/// `BorderColor::all` — every other button wants one colour all the way round — and a tab is
-/// the one widget that wants a different colour on one edge, which is the whole effect: the
+/// `BorderColor::all` — every other button wants one color all the way round — and a tab is
+/// the one widget that wants a different color on one edge, which is the whole effect: the
 /// accent sits on the top of the open tab and nowhere else.
 pub(crate) fn paint_tabs(
     theme: Res<Theme>,
@@ -258,7 +258,7 @@ pub(crate) fn paint_tabs(
     let hovered_fill = theme.color(Role::ButtonHover);
 
     for (hovered, open, mut background, mut border) in &mut tabs {
-        // An open tab is filled with the *content's* colour, which is what joins it to the
+        // An open tab is filled with the *content's* color, which is what joins it to the
         // pane below. A closed one keeps a button's face, so the strip reads as a row of
         // things you can press with one of them already open.
         *background = BackgroundColor(match (open, hovered.get()) {

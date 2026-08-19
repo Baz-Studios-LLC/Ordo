@@ -9,11 +9,11 @@
 //! build - a title bar, a close button - and a body the caller fills, and two
 //! `children!` on one entity is not a thing.
 //!
-//! So the chrome is not spawned with the window. It is put on afterwards by
+//! So the chrome is not spawned with the window. It is put on afterward by
 //! [`dress_windows`], which is the same move Ordo already makes with paint:
 //! nothing is painted at spawn either, a tag says what a thing wants and a pass
 //! gives it. A window carries [`Titled`] and gets a title bar the same way a
-//! node carries [`Fill`] and gets a colour.
+//! node carries [`Fill`] and gets a color.
 //!
 //! ```ignore
 //! commands.spawn((

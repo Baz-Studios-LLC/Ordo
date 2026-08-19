@@ -5,8 +5,8 @@
 //! top, cap how many can exist, age it out. Here it is once.
 //!
 //! Everything transient fades through [`Opacity`] rather than by writing
-//! colours, so the repaint pass in [`crate::theme`] stays the only thing that
-//! ever sets a colour.
+//! colors, so the repaint pass in [`crate::theme`] stays the only thing that
+//! ever sets a color.
 
 use crate::theme::{Edge, Face, Fill, FontRole, Ink, Metric, Opacity, Role, TextSize, Theme};
 use crate::widgets::{Anchor, Anchored, Padded, dim, heading};
@@ -141,7 +141,7 @@ pub(crate) fn age(
 pub struct Notice {
     pub text: String,
     /// Emphasis. DF distinguishes a routine notice from an event that deserves
-    /// the accent colour, and it is the right distinction to keep.
+    /// the accent color, and it is the right distinction to keep.
     pub fanfare: bool,
 }
 
@@ -202,7 +202,7 @@ pub const TOAST_FADE: f32 = 0.45;
 /// A shelf: an edge-docked stack of cards. Quest trackers, buff bars,
 /// objective pins, toast trays — every game wants at least one wall of
 /// small cards, and this is the wall. Dock it to a corner or an edge
-/// centre; it stacks its children downward, ranked against the edge it
+/// center; it stacks its children downward, ranked against the edge it
 /// stands on, and leaves what the cards ARE entirely to the game.
 pub fn shelf(anchor: Anchor) -> impl Bundle {
     (
@@ -535,20 +535,20 @@ mod tests {
 // Proclamations
 // ---------------------------------------------------------------------------
 
-/// The trumpet, not the doorbell: a centre-stage card for the events a
+/// The trumpet, not the doorbell: a center-stage card for the events a
 /// session gets a handful of — a birth, a founding, a hall raised. It fades
 /// and swells in, holds while its confetti falls, and bows out; when two
 /// great things happen at once, the second WAITS. Ceremony that queues is
 /// ceremony; ceremony that stacks is noise.
 ///
 /// The kit owns the stage, the card, the choreography and the confetti.
-/// What the moments are, what they say, what colour they wear and what
+/// What the moments are, what they say, what color they wear and what
 /// sound they make stay the game's.
 #[derive(Debug, Clone)]
 pub struct Proclamation {
     pub title: String,
     pub line: String,
-    /// The card's ink — border, title and confetti. Colour is the KIND
+    /// The card's ink — border, title and confetti. Color is the KIND
     /// here, part of a game's own language, so it arrives as paint rather
     /// than as a theme role.
     pub color: Color,
@@ -596,10 +596,10 @@ pub(crate) struct Confetti {
     life: f32,
 }
 
-/// The herald's stage: high and centred, above the furniture with the
+/// The herald's stage: high and centered, above the furniture with the
 /// toasts.
 ///
-/// It stood dead centre once, which is the one place a great day should
+/// It stood dead center once, which is the one place a great day should
 /// NOT be announced - the eye is already there, the world's own business
 /// happens there, and a card in the middle covers the very birth or
 /// building it came to announce. A third of the way down it reads as a
@@ -669,7 +669,7 @@ pub(crate) fn stage_proclamations(
                 row_gap: theme.px(Metric::Gap),
                 // Room around the words. A proclamation is mostly air:
                 // the space is what makes it read as ceremony rather
-                // than as another notice that happens to be centred.
+                // than as another notice that happens to be centered.
                 padding: UiRect::axes(Val::Px(52.0), Val::Px(30.0)),
                 border: UiRect::all(Val::Px(3.0)),
                 border_radius: BorderRadius::all(Val::Px(14.0)),
@@ -697,7 +697,7 @@ pub(crate) fn stage_proclamations(
     let line_entity = commands.spawn(dim(&line)).id();
     commands.entity(line_entity).insert(ChildOf(card));
 
-    // The confetti: a dozen flecks of the card's own colour, thrown from
+    // The confetti: a dozen flecks of the card's own color, thrown from
     // the top corners, falling under interface gravity.
     for i in 0..30 {
         let side = if i % 2 == 0 { -1.0 } else { 1.0 };

@@ -7,9 +7,9 @@
 //! the game's.
 //!
 //! Material: the night-ledger — layered dark surfaces with light falling
-//! down them ([`Sheen`]), an embossed frame, and cornerwork. Vivid colour
+//! down them ([`Sheen`]), an embossed frame, and cornerwork. Vivid color
 //! is the CONTENT's job (liveries, schools, faith bands); the book itself
-//! stays quiet so the colour reads.
+//! stays quiet so the color reads.
 
 use bevy::prelude::*;
 use bevy::ui::BackgroundGradient;
@@ -386,9 +386,9 @@ pub fn page(commands: &mut Commands, parent: Entity, gutter: f32) -> PageParts {
     }
 }
 
-/// A count chip: a small colour-edged pill carrying a label and a live
+/// A count chip: a small color-edged pill carrying a label and a live
 /// numeral — "HUNTERS 3" in the hunter's own leather-brown. The caller
-/// writes the numeral; the colour is the caller's language.
+/// writes the numeral; the color is the caller's language.
 pub struct ChipParts {
     pub root: Entity,
     pub value: Entity,

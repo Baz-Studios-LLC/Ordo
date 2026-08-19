@@ -6,7 +6,7 @@
 //! back the entities the caller will want instead.
 //!
 //! Nothing here reads the theme. Widgets carry role and metric *tags*; the
-//! passes in [`crate::theme`] fill in the colour and the spacing, which is why
+//! passes in [`crate::theme`] fill in the color and the spacing, which is why
 //! a running game answers an edit to the theme file.
 
 use crate::tabs::Selected;
@@ -45,15 +45,15 @@ pub enum Anchor {
     TopRight,
     BottomLeft,
     BottomRight,
-    /// Centred on an edge — a quest tracker's home, halfway up the left.
+    /// Centered on an edge — a quest tracker's home, halfway up the left.
     Left,
     Right,
     Top,
     Bottom,
-    /// Dead centre — nothing lives here long.
+    /// Dead center — nothing lives here long.
     Center,
-    /// High and centred, about a third of the way down: where a herald
-    /// stands. Dead centre is where the eye already is and where the
+    /// High and centered, about a third of the way down: where a herald
+    /// stands. Dead center is where the eye already is and where the
     /// world's own business happens, so a card there covers the very
     /// thing it is announcing; a third down clears the ground and reads
     /// as a proclamation over the scene rather than a box in front of
@@ -70,7 +70,7 @@ impl Anchor {
             Anchor::TopRight => (margin, margin, auto, auto),
             Anchor::BottomLeft => (auto, auto, margin, margin),
             Anchor::BottomRight => (auto, margin, margin, auto),
-            // The centred axis pins at fifty percent; `centering` hands the
+            // The centered axis pins at fifty percent; `centering` hands the
             // matching half-size pullback, applied once at spawn.
             Anchor::Left => (half, auto, auto, margin),
             Anchor::Right => (half, margin, auto, auto),
@@ -268,6 +268,131 @@ pub fn rule() -> impl Bundle {
         },
         BorderColor::all(Color::NONE),
         Edge(Role::PanelBorder),
+    )
+}
+
+/// A titled divider: a short run, the words, a run to the edge.
+///
+/// THE ONE WAY TO OPEN A SECTION. Three of these grew up in one game - a centered
+/// one, a plain dim line, and a tick-and-rule - and which a surface got came
+/// down to who wrote it.
+///
+/// This is the tick, with the weights made equal, which is what Brett was
+/// missing from it: "I like on the centered ones how the line looks like it is
+/// the same weight on both sides of the word. I think I would like the tick
+/// headers if the line was the same on both sides." The old tick differed on
+/// three counts at once - 1.5px against 1px, accent against border ink, and 70%
+/// alpha against 30% - so one side read as a bold gold dash and the other as a
+/// faint gray hairline. ONE INK, ONE WEIGHT, and only the LENGTH differs now.
+///
+/// Left-aligned rather than centered because sections stack: down a tall window
+/// every label starts at the same x, and a centered label lands somewhere new on
+/// each line depending on how long its words are.
+///
+/// A `Commands` helper rather than a bundle, because it is three entities and a
+/// bundle is one. Returns the row, so a caller may hide the whole heading when
+/// its section has nothing to say - which is most of what a section header is
+/// for in a live window.
+pub fn section(commands: &mut Commands, parent: Entity, label: &str) -> Entity {
+    let row = commands
+        .spawn((
+            Node {
+                width: percent(100),
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                column_gap: px(8.0),
+                margin: UiRect::top(px(4.0)),
+                ..default()
+            },
+            ChildOf(parent),
+        ))
+        .id();
+    // The two runs differ in LENGTH and in nothing else.
+    let mut hairline = |commands: &mut Commands, lead: bool| {
+        commands.spawn((
+            Node {
+                width: if lead { px(14.0) } else { Val::Auto },
+                flex_grow: if lead { 0.0 } else { 1.0 },
+                flex_shrink: 0.0,
+                height: px(1.0),
+                ..default()
+            },
+            BackgroundColor(Color::NONE),
+            Fill(Role::PanelBorder),
+            ChildOf(row),
+        ));
+    };
+    hairline(commands, true);
+    commands.spawn((
+        text_in(label, Role::Accent, Metric::SmallSize, FontRole::Display),
+        ChildOf(row),
+    ));
+    hairline(commands, false);
+    row
+}
+
+/// A stat tile: a quiet label over a value said loudly, in its own bordered card.
+///
+/// LIFTED OUT OF A GAME, which is the only way a kit earns a widget. Divus
+/// Factus grew these for a villager's vitals - hunger, rest, health, spirits -
+/// and they are the reason that window reads as designed rather than dumped:
+/// four facts as four objects the eye can count, instead of four rows it has to
+/// read. They tile two-up by default and wrap, so a section of them needs no
+/// grid arithmetic.
+///
+/// The VALUE entity comes back, because a live window writes values every frame
+/// and the kit never does. Its color is the caller's too - a value that goes
+/// red when it matters is the whole point of a tile over a row.
+pub fn stat_tile(commands: &mut Commands, parent: Entity, label: &str, value: &str) -> Entity {
+    let tile = commands
+        .spawn((
+            Node {
+                flex_grow: 1.0,
+                flex_basis: percent(45.0),
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::axes(px(10.0), px(7.0)),
+                border: UiRect::all(px(1.0)),
+                border_radius: BorderRadius::all(px(3.0)),
+                row_gap: px(2.0),
+                ..default()
+            },
+            BackgroundColor(Color::NONE),
+            Fill(Role::TitleBg),
+            BorderColor::all(Color::NONE),
+            Edge(Role::PanelBorder),
+            ChildOf(parent),
+        ))
+        .id();
+    commands.spawn((
+        text_in(label, Role::InkDim, Metric::SmallSize, FontRole::Display),
+        ChildOf(tile),
+    ));
+    commands
+        .spawn((
+            text_in(value, Role::Ink, Metric::BodySize, FontRole::Body),
+            ChildOf(tile),
+        ))
+        .id()
+}
+
+/// A well: the part of a tall window that scrolls, everything else staying put.
+///
+/// Also lifted rather than invented. A profile window with a dozen sections has
+/// to scroll SOMETHING, and scrolling the whole panel takes the title and the
+/// tabs away with it - so the frame holds still and the well moves. `min_height`
+/// of nought is the part everybody forgets: without it a flex child refuses to
+/// shrink below its content and the scroll never engages.
+pub fn well() -> impl Bundle {
+    (
+        Node {
+            width: percent(100),
+            flex_grow: 1.0,
+            min_height: px(0.0),
+            flex_direction: FlexDirection::Column,
+            overflow: Overflow::scroll_y(),
+            ..default()
+        },
+        bevy::ui::ScrollPosition::default(),
     )
 }
 
@@ -470,9 +595,9 @@ pub fn button(content: &str) -> impl Bundle {
 /// theme itself moves, every button repaints rather than only the touched one.
 ///
 /// A button's chrome is painted here rather than through `Fill` and `Edge`,
-/// because its colour depends on what the pointer is doing and the repaint pass
-/// knows nothing about that. That makes this the one place a colour is set
-/// outside `theme::repaint`, so it carries the same obligation: honour
+/// because its color depends on what the pointer is doing and the repaint pass
+/// knows nothing about that. That makes this the one place a color is set
+/// outside `theme::repaint`, so it carries the same obligation: honor
 /// [`Opacity`]. Without it a fading menu fades its labels and leaves the boxes
 /// behind them at full strength — and worse, only until the pointer moves,
 /// since a button that isn't touched isn't repainted at all.

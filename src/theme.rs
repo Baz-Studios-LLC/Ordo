@@ -1,13 +1,13 @@
 //! Roles, metrics, and the file that fills them.
 //!
-//! Ordo does not own colour. A game's interface should be cut from the same
+//! Ordo does not own color. A game's interface should be cut from the same
 //! cloth as its world — Divus Factus tints its panels from the very ramps its
 //! villagers' clothes are dyed from — and a kit that shipped its own palette
-//! would force every game to keep two sets of colours in step forever. So Ordo
+//! would force every game to keep two sets of colors in step forever. So Ordo
 //! owns the *vocabulary* (what a `CardBorder` is for, how wide a label column
 //! should be) and the game supplies the pigment.
 //!
-//! Nothing here reads a colour at spawn time. A node is tagged with the *role*
+//! Nothing here reads a color at spawn time. A node is tagged with the *role*
 //! it plays — [`Fill`], [`Edge`], [`Ink`], [`Face`], [`TextSize`] — and a repaint
 //! pass fills it in whenever the theme changes. That indirection is the whole
 //! reason the theme file can be edited with the game running.
@@ -19,7 +19,7 @@ use bevy::ui::{BackgroundGradient, ColorStop, InterpolationColorSpace, LinearGra
 use serde::Deserialize;
 use std::collections::HashMap;
 
-/// What a colour is *for*. Roles, not names: a panel border stays a panel
+/// What a color is *for*. Roles, not names: a panel border stays a panel
 /// border when the game turns from gold to verdigris, and every call site that
 /// asked for one comes along without being touched.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -189,7 +189,7 @@ impl Default for Theme {
     }
 }
 
-/// Colour ramps the game lends to Ordo, by name.
+/// Color ramps the game lends to Ordo, by name.
 ///
 /// A ramp is registered as the game's *own* sampling function rather than as a
 /// list of stops, so `{ ramp = "cloth_gold", shade = 0.85 }` in the theme file
@@ -271,8 +271,8 @@ pub struct Face(pub FontRole);
 
 /// Scales whatever alpha this node's role already carries.
 ///
-/// Animation goes through here rather than writing colours directly, so the
-/// repaint pass stays the only thing that ever sets a colour. Two writers
+/// Animation goes through here rather than writing colors directly, so the
+/// repaint pass stays the only thing that ever sets a color. Two writers
 /// racing over one `BackgroundColor` is how a fading toast ends up flickering
 /// back to full opacity every time the theme file is touched.
 #[derive(Component, Debug, Clone, Copy)]
@@ -284,10 +284,10 @@ impl Default for Opacity {
     }
 }
 
-/// A role's colour, scaled by whatever [`Opacity`] the node carries.
+/// A role's color, scaled by whatever [`Opacity`] the node carries.
 ///
 /// Shared with `widgets::paint_buttons`, which is the only painter outside
-/// [`repaint`] — a button's colour depends on the pointer, which the repaint
+/// [`repaint`] — a button's color depends on the pointer, which the repaint
 /// pass knows nothing about. Both go through here so neither can forget the
 /// opacity and leave half a widget unfaded.
 pub(crate) fn tinted(theme: &Theme, role: Role, opacity: Option<&Opacity>) -> Color {
@@ -302,7 +302,7 @@ pub(crate) fn tinted(theme: &Theme, role: Role, opacity: Option<&Opacity>) -> Co
 // The asset
 // ---------------------------------------------------------------------------
 
-/// A colour in the theme file: either stated outright, or drawn off one of the
+/// A color in the theme file: either stated outright, or drawn off one of the
 /// game's ramps.
 ///
 /// ```toml
@@ -347,7 +347,7 @@ pub struct FontSpec {
     pub path: Option<String>,
     pub family: Option<String>,
     pub generic: Option<String>,
-    /// 1–1000. Only variable fonts honour anything but the weight they were cut
+    /// 1–1000. Only variable fonts honor anything but the weight they were cut
     /// at; a separate bold file wants its own role.
     pub weight: Option<u16>,
     pub italic: bool,
