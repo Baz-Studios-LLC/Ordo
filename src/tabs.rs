@@ -29,7 +29,7 @@ use bevy::picking::hover::Hovered;
 use bevy::prelude::*;
 use bevy::ui_widgets::Activate;
 
-use crate::theme::{Metric, Role, Theme};
+use crate::theme::{Edge, Fill, Metric, Role, Theme};
 use crate::widgets::button;
 
 /// A strip of tabs, and which of them is open.
@@ -292,5 +292,161 @@ mod tests {
     fn an_open_tab_wears_the_pressed_face_and_an_accent_edge() {
         assert_eq!(is_selected(true), Some((Role::ButtonPressed, Role::Accent)));
         assert_eq!(is_selected(false), None);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Folder tabs: the strip that joins the page it opens.
+// ---------------------------------------------------------------------------
+
+/// A tab drawn as a folder: rounded at the top, open at the bottom when it is
+/// the selected one, so the strip and its page read as one object.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct FolderTab;
+
+/// The board a folder's tabs open into.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct FolderPane;
+
+/// Builds a folder: the strip, its tabs, and one pane each. Returns the panes,
+/// for the caller to fill.
+///
+/// A `Commands` helper rather than bundles, and that is the whole point of it.
+/// A folder tab needs THREE things and any two of them look like a bug:
+///
+/// 1. The strip must OVERLAP the page by a pixel, so the selected tab's bottom
+///    border - painted in the page's own fill - erases the line beneath it.
+/// 2. The strip must be DRAWN OVER the page, because the page is a later sibling
+///    and will otherwise paint its top border straight back over that opening.
+/// 3. The strip and the page must sit in a wrapper WITH NO GAP, because their
+///    parent's `row_gap` otherwise pushes the tab away from the line it opens -
+///    and the margin in (1) can only claw back one pixel of it.
+///
+/// The third is the one that hides. It was written by hand for one window, left
+/// out of the shared widget, and reported again two hours later on another
+/// screen: "Settings page tab has th same connection problem." A caller cannot
+/// get it wrong from here, which is what a kit is for.
+pub fn folder(commands: &mut Commands, parent: Entity, labels: &[&str]) -> Vec<Entity> {
+    let wrapper = commands
+        .spawn((
+            Node {
+                width: percent(100.0),
+                flex_grow: 1.0,
+                min_height: px(0.0),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            ChildOf(parent),
+        ))
+        .id();
+    let strip = commands
+        .spawn((
+            tab_strip(),
+            Node {
+                width: percent(100.0),
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::End,
+                // (1) and (2).
+                margin: UiRect::bottom(px(1.0) * -1.0),
+                ..default()
+            },
+            ZIndex(1),
+            ChildOf(wrapper),
+        ))
+        .id();
+
+    let mut panes = Vec::with_capacity(labels.len());
+    for (index, label) in labels.iter().enumerate() {
+        commands.spawn((
+            tab(label, index),
+            FolderTab,
+            Node {
+                padding: UiRect::axes(px(22.0), px(8.0)),
+                border: UiRect {
+                    top: px(if index == 0 { 3.0 } else { 1.0 }),
+                    left: px(1.0),
+                    right: px(1.0),
+                    bottom: px(1.0),
+                },
+                border_radius: BorderRadius {
+                    top_left: px(3.0),
+                    top_right: px(3.0),
+                    bottom_left: px(0.0),
+                    bottom_right: px(0.0),
+                },
+                ..default()
+            },
+            ChildOf(strip),
+        ));
+        let pane = commands
+            .spawn((
+                Pane { strip, index },
+                FolderPane,
+                Node {
+                    width: percent(100.0),
+                    flex_grow: 1.0,
+                    min_height: px(0.0),
+                    flex_direction: FlexDirection::Column,
+                    padding: UiRect::all(px(12.0)),
+                    border: UiRect::all(px(1.0)),
+                    // Square where the first tab meets it, rounded elsewhere.
+                    border_radius: BorderRadius {
+                        top_left: px(0.0),
+                        top_right: px(3.0),
+                        bottom_left: px(3.0),
+                        bottom_right: px(3.0),
+                    },
+                    display: if index == 0 {
+                        Display::Flex
+                    } else {
+                        Display::None
+                    },
+                    ..default()
+                },
+                BackgroundColor(Color::NONE),
+                Fill(Role::CardBg),
+                BorderColor::all(Color::NONE),
+                Edge(Role::CardBorder),
+                ChildOf(wrapper),
+            ))
+            .id();
+        panes.push(pane);
+    }
+    panes
+}
+
+/// Paints a folder tab's four edges, which are four different things.
+///
+/// Not `Edge(Role)` like everything else in the kit, because that paints one
+/// color on all four sides and a folder is defined by its sides DIFFERING: gold
+/// along the top of the open one, and a bottom in the page's own fill, which is
+/// what makes the line appear to open there.
+pub(crate) fn paint_folder_tabs(
+    theme: Res<Theme>,
+    mut tabs: Query<(&mut BorderColor, &mut BackgroundColor, &mut Node, Has<Selected>), With<FolderTab>>,
+) {
+    for (mut border, mut fill, mut node, open) in &mut tabs {
+        *border = if open {
+            BorderColor {
+                top: theme.color(Role::Accent),
+                left: theme.color(Role::CardBorder),
+                right: theme.color(Role::CardBorder),
+                bottom: theme.color(Role::CardBg),
+            }
+        } else {
+            BorderColor {
+                top: theme.color(Role::PanelBorder).with_alpha(0.25),
+                left: theme.color(Role::PanelBorder).with_alpha(0.25),
+                right: theme.color(Role::PanelBorder).with_alpha(0.25),
+                bottom: theme.color(Role::CardBorder),
+            }
+        };
+        fill.0 = if open {
+            theme.color(Role::CardBg)
+        } else {
+            theme.color(Role::PanelBg).with_alpha(0.55)
+        };
+        // The open tab's top is thicker, so the width moves with the color.
+        node.border.top = px(if open { 3.0 } else { 1.0 });
     }
 }

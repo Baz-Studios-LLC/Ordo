@@ -308,7 +308,7 @@ pub fn section(commands: &mut Commands, parent: Entity, label: &str) -> Entity {
         ))
         .id();
     // The two runs differ in LENGTH and in nothing else.
-    let mut hairline = |commands: &mut Commands, lead: bool| {
+    let hairline = |commands: &mut Commands, lead: bool| {
         commands.spawn((
             Node {
                 width: if lead { px(14.0) } else { Val::Auto },

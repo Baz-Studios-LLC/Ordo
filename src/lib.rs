@@ -189,6 +189,7 @@ impl Plugin for OrdoPlugin {
                     radial::aim_highlight,
                     // Before the button paint, which reads the `Selected` this puts on.
                     tabs::space_strips,
+                    tabs::paint_folder_tabs,
                     tabs::show_selected_pane,
                     tabs::shape_tabs,
                     stepper::size_steppers,
