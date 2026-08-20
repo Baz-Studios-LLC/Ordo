@@ -80,6 +80,12 @@ pub enum Metric {
     /// already looking at; this one has to carry a room, so it is a size
     /// of its own rather than a multiple of the ordinary title.
     HeraldSize,
+    /// The line beneath a herald's title. Its own metric, because it is the
+    /// only text in the kit whose job is to sit under something enormous:
+    /// falling through to [`Metric::SmallSize`] put a 12px line under a 38px
+    /// title, which read as a caption that had wandered in rather than as the
+    /// second half of a sentence.
+    HeraldLineSize,
     BodySize,
     SmallSize,
     /// Inner padding of a panel.
@@ -170,6 +176,7 @@ impl Default for Theme {
             metrics: HashMap::from([
                 (TitleSize, 15.0),
                 (HeraldSize, 38.0),
+                (HeraldLineSize, 20.0),
                 (BodySize, 13.0),
                 (SmallSize, 12.0),
                 (Pad, 12.0),
@@ -468,6 +475,7 @@ table!(
     MetricTable, Metric, f32,
     title_size => TitleSize,
     herald_size => HeraldSize,
+    herald_line_size => HeraldLineSize,
     body_size => BodySize,
     small_size => SmallSize,
     pad => Pad,
@@ -765,6 +773,7 @@ mod tests {
         for metric in [
             Metric::TitleSize,
             Metric::BodySize,
+            Metric::HeraldLineSize,
             Metric::SmallSize,
             Metric::Pad,
             Metric::Gap,

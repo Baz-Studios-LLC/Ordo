@@ -77,7 +77,7 @@ impl Anchor {
             Anchor::Top => (margin, auto, auto, half),
             Anchor::Bottom => (auto, auto, margin, half),
             Anchor::Center => (half, auto, auto, half),
-            Anchor::Herald => (Val::Percent(30.0), auto, auto, half),
+            Anchor::Herald => (Val::Percent(24.0), auto, auto, half),
         }
     }
 

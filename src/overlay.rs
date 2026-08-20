@@ -695,7 +695,12 @@ pub(crate) fn stage_proclamations(
         ChildOf(card),
     ));
     let line_entity = commands.spawn(dim(&line)).id();
-    commands.entity(line_entity).insert(ChildOf(card));
+    // Same lesson as the title above: the size has to be a METRIC, because
+    // `TextSize` is re-applied from the theme on every move and a raw
+    // `TextFont` here would be quietly overwritten.
+    commands
+        .entity(line_entity)
+        .insert((TextSize(Metric::HeraldLineSize), ChildOf(card)));
 
     // The confetti: a dozen flecks of the card's own color, thrown from
     // the top corners, falling under interface gravity.

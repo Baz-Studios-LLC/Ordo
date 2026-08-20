@@ -51,6 +51,12 @@ title_size  = 15.0
 body_size   = 13.0
 small_size  = 12.0
 
+# The proclamation card. Its own pair, because a herald's title carries a room
+# rather than labelling something the eye is already on — and its line has to
+# hold its own beneath that, which no ordinary small text has to do.
+herald_size      = 38.0
+herald_line_size = 20.0
+
 pad         = 12.0
 gap         = 5.0
 margin      = 10.0
